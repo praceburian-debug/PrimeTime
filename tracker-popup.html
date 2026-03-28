@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<title>TimeTrack – Tracker</title>
+<script src="https://p.trellocdn.com/power-up.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0D0D0F; --surface: #16161A; --surface2: #1E1E24; --surface3: #26262E;
+    --border: rgba(255,255,255,0.08); --border2: rgba(255,255,255,0.14);
+    --text: #F0EFE8; --muted: #7A7A88;
+    --accent: #6C5CE7; --accent2: #A29BFE;
+    --green: #00B894; --red: #D63031;
+    --font-body: 'Inter', sans-serif; --font-mono: 'DM Mono', monospace;
+  }
+  body { font-family: var(--font-body); background: var(--bg); color: var(--text); padding: 16px; }
+
+  .card-label {
+    font-size: 11px; color: var(--muted); text-transform: uppercase;
+    letter-spacing: 0.08em; font-weight: 500; margin-bottom: 4px;
+  }
+  .card-name {
+    font-size: 14px; font-weight: 500; margin-bottom: 16px;
+    padding-bottom: 12px; border-bottom: 1px solid var(--border);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+
+  .clock {
+    font-family: var(--font-mono); font-size: 44px; font-weight: 500;
+    letter-spacing: -2px; text-align: center; padding: 20px 0 8px;
+    transition: color 0.3s; color: var(--text);
+  }
+  .clock.running { color: var(--accent2); }
+
+  .clock-sub { font-size: 11px; color: var(--muted); text-align: center; font-family: var(--font-mono); margin-bottom: 16px; }
+
+  .controls { display: flex; gap: 8px; margin-bottom: 16px; }
+  .btn {
+    flex: 1; padding: 10px; border-radius: 8px; border: none;
+    font-family: var(--font-body); font-weight: 500; font-size: 13px;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .btn-start { background: var(--accent); color: white; }
+  .btn-start:hover { background: #7C6AF0; }
+  .btn-stop { background: rgba(214,48,49,0.15); color: #FF6B6B; border: 1px solid rgba(214,48,49,0.25); }
+  .btn-stop:hover { background: rgba(214,48,49,0.25); }
+  .btn-ghost { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+  .btn-ghost:hover { background: var(--surface3); color: var(--text); }
+  .btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .hidden { display: none !important; }
+
+  .divider { border: none; border-top: 1px solid var(--border); margin: 0 0 14px; }
+
+  .section-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 500; margin-bottom: 8px; }
+
+  .manual-row { display: flex; gap: 6px; align-items: center; }
+  .time-input {
+    font-family: var(--font-mono); font-size: 14px;
+    background: var(--surface2); border: 1px solid var(--border2);
+    border-radius: 7px; padding: 7px 8px; color: var(--text);
+    width: 58px; text-align: center; outline: none;
+  }
+  .time-input:focus { border-color: var(--accent); }
+  .time-sep { color: var(--muted); font-family: var(--font-mono); }
+  .desc-input {
+    flex: 1; font-family: var(--font-body); font-size: 12px;
+    background: var(--surface2); border: 1px solid var(--border2);
+    border-radius: 7px; padding: 7px 8px; color: var(--text); outline: none;
+  }
+  .desc-input:focus { border-color: var(--accent); }
+  .desc-input::placeholder { color: var(--muted); }
+  .btn-add {
+    padding: 7px 12px; background: var(--accent); color: white;
+    border: none; border-radius: 7px; font-size: 12px; font-weight: 500;
+    cursor: pointer; font-family: var(--font-body); transition: background 0.15s;
+  }
+  .btn-add:hover { background: #7C6AF0; }
+
+  .log-section { margin-top: 14px; }
+  .log-entry {
+    display: flex; align-items: center; gap: 8px;
+    padding: 7px 0; border-bottom: 1px solid var(--border);
+    font-size: 12px;
+  }
+  .log-entry:last-child { border-bottom: none; }
+  .avatar {
+    width: 22px; height: 22px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 8px; font-weight: 600; color: white; flex-shrink: 0;
+  }
+  .log-info { flex: 1; min-width: 0; }
+  .log-desc { color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .log-meta { font-size: 10px; color: var(--muted); margin-top: 1px; }
+  .log-time { font-family: var(--font-mono); font-size: 11px; color: var(--accent2); flex-shrink: 0; }
+  .log-del { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 13px; padding: 1px 3px; border-radius: 3px; }
+  .log-del:hover { background: rgba(214,48,49,0.15); color: #FF6B6B; }
+
+  .empty { font-size: 12px; color: var(--muted); text-align: center; padding: 12px 0; }
+
+  .toast {
+    position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%) translateY(6px);
+    background: var(--surface2); border: 1px solid var(--border2); border-radius: 8px;
+    padding: 8px 14px; font-size: 12px; font-weight: 500;
+    opacity: 0; transition: all 0.2s; pointer-events: none; white-space: nowrap;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  .running-dot {
+    display: inline-block; width: 6px; height: 6px; border-radius: 50%;
+    background: var(--green); margin-right: 5px;
+    animation: blink 1.4s infinite;
+  }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+</style>
+</head>
+<body>
+<div class="card-label">Sledovaná karta</div>
+<div class="card-name" id="card-name">Načítám…</div>
+
+<div class="clock" id="clock">00:00:00</div>
+<div class="clock-sub" id="clock-sub">Připraven ke spuštění</div>
+
+<div class="controls">
+  <button class="btn btn-start" id="btn-start" onclick="startTimer()">▶ Spustit</button>
+  <button class="btn btn-stop hidden" id="btn-stop" onclick="stopTimer()">■ Zastavit</button>
+  <button class="btn btn-ghost" id="btn-reset" onclick="resetTimer()" disabled>↺ Reset</button>
+</div>
+
+<hr class="divider">
+
+<div class="section-label">Přidat čas manuálně</div>
+<div class="manual-row">
+  <input type="number" class="time-input" id="mh" placeholder="hh" min="0" max="99">
+  <span class="time-sep">:</span>
+  <input type="number" class="time-input" id="mm" placeholder="mm" min="0" max="59">
+  <input type="text" class="desc-input" id="mdesc" placeholder="Co jsi dělal/a?">
+  <button class="btn-add" onclick="addManual()">+ Přidat</button>
+</div>
+
+<div class="log-section">
+  <div class="section-label" style="margin-top:14px">Záznamy na této kartě</div>
+  <div id="log-list"><div class="empty">Žádné záznamy</div></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const t = TrelloPowerUp.iframe();
+
+let cardId = null;
+let currentMember = null;
+let isAdmin = false;
+let timerSecs = 0;
+let timerInterval = null;
+let timerRunning = false;
+
+// Palette pro avatary (deterministická barva dle memberId)
+const COLORS = ['#6C5CE7','#00B894','#E17055','#0984E3','#FDCB6E','#A29BFE','#D63031','#00CEC9'];
+function memberColor(id) {
+  let h = 0; for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) & 0xffffffff;
+  return COLORS[Math.abs(h) % COLORS.length];
+}
+function initials(name) {
+  const p = (name || '?').trim().split(' ');
+  return (p[0][0] + (p[1]?.[0] || '')).toUpperCase();
+}
+function fmtSecs(s) {
+  return [Math.floor(s/3600), Math.floor((s%3600)/60), s%60].map(v => String(v).padStart(2,'0')).join(':');
+}
+function fmtHM(mins) {
+  const h = Math.floor(mins/60), m = mins%60;
+  return h > 0 ? `${h}h ${m}m` : `${m}m`;
+}
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2200);
+}
+function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+
+// ── Načtení dat ───────────────────────────────────────────
+async function init() {
+  const [card, member, perms] = await Promise.all([
+    t.card('id', 'name'),
+    t.member('id', 'fullName'),
+    t.get('board', 'shared', 'tt-permissions'),
+  ]);
+
+  cardId = card.id;
+  currentMember = member;
+  document.getElementById('card-name').textContent = card.name;
+
+  const adminIds = perms?.admins || [];
+  isAdmin = adminIds.length === 0 || adminIds.includes(member.id);
+
+  // Obnovíme běžící stav pokud byl (persistujeme start čas v member storage)
+  const running = await t.get('member', 'private', `tt-running-${cardId}`);
+  if (running?.startedAt) {
+    timerSecs = Math.floor((Date.now() - running.startedAt) / 1000);
+    resumeTimer();
+  }
+
+  renderLog();
+}
+
+// ── Timer ─────────────────────────────────────────────────
+async function startTimer() {
+  timerRunning = true;
+  const startedAt = Date.now() - timerSecs * 1000;
+  // Uložíme start do member private storage (persistuje přes refreshe)
+  await t.set('member', 'private', `tt-running-${cardId}`, { startedAt });
+
+  timerInterval = setInterval(() => {
+    timerSecs++;
+    document.getElementById('clock').textContent = fmtSecs(timerSecs);
+  }, 1000);
+
+  document.getElementById('clock').classList.add('running');
+  document.getElementById('clock-sub').innerHTML = `<span class="running-dot"></span>Časovač běží…`;
+  document.getElementById('btn-start').classList.add('hidden');
+  document.getElementById('btn-stop').classList.remove('hidden');
+  document.getElementById('btn-reset').disabled = true;
+}
+
+function resumeTimer() {
+  timerRunning = true;
+  document.getElementById('clock').textContent = fmtSecs(timerSecs);
+  document.getElementById('clock').classList.add('running');
+  document.getElementById('clock-sub').innerHTML = `<span class="running-dot"></span>Časovač běží…`;
+  document.getElementById('btn-start').classList.add('hidden');
+  document.getElementById('btn-stop').classList.remove('hidden');
+  document.getElementById('btn-reset').disabled = true;
+
+  timerInterval = setInterval(() => {
+    timerSecs++;
+    document.getElementById('clock').textContent = fmtSecs(timerSecs);
+  }, 1000);
+}
+
+async function stopTimer() {
+  clearInterval(timerInterval);
+  timerRunning = false;
+  await t.remove('member', 'private', `tt-running-${cardId}`);
+
+  const mins = Math.max(1, Math.round(timerSecs / 60));
+  await saveLog({ mins, desc: '' });
+
+  document.getElementById('clock').classList.remove('running');
+  document.getElementById('btn-stop').classList.add('hidden');
+  document.getElementById('btn-start').classList.remove('hidden');
+  document.getElementById('btn-reset').disabled = false;
+  document.getElementById('clock-sub').textContent = `Zalogováno ${fmtHM(mins)}`;
+  timerSecs = 0;
+  document.getElementById('clock').textContent = '00:00:00';
+  toast(`✓ Zalogováno ${fmtHM(mins)}`);
+  renderLog();
+}
+
+function resetTimer() {
+  timerSecs = 0;
+  document.getElementById('clock').textContent = '00:00:00';
+  document.getElementById('clock-sub').textContent = 'Připraven ke spuštění';
+  document.getElementById('btn-reset').disabled = true;
+}
+
+// ── Manuální záznam ───────────────────────────────────────
+async function addManual() {
+  const h = parseInt(document.getElementById('mh').value) || 0;
+  const m = parseInt(document.getElementById('mm').value) || 0;
+  const mins = h * 60 + m;
+  if (mins <= 0) { toast('Zadej platný čas'); return; }
+  const desc = document.getElementById('mdesc').value.trim();
+  await saveLog({ mins, desc });
+  document.getElementById('mh').value = '';
+  document.getElementById('mm').value = '';
+  document.getElementById('mdesc').value = '';
+  toast(`✓ Přidáno ${fmtHM(mins)}`);
+  renderLog();
+}
+
+// ── Uložení logu do board shared storage ─────────────────
+async function saveLog({ mins, desc }) {
+  const logs = await t.get('board', 'shared', 'tt-logs') || [];
+  logs.push({
+    id: genId(),
+    memberId: currentMember.id,
+    memberName: currentMember.fullName,
+    cardId,
+    mins,
+    desc,
+    date: new Date().toISOString().slice(0, 10),
+  });
+  await t.set('board', 'shared', 'tt-logs', logs);
+  // Aktualizujeme cache badge
+  const cardMins = logs.filter(l => l.cardId === cardId).reduce((s, l) => s + l.mins, 0);
+  await t.set('card', 'shared', 'tt-total', cardMins);
+}
+
+async function deleteLog(logId) {
+  const logs = (await t.get('board', 'shared', 'tt-logs') || []).filter(l => l.id !== logId);
+  await t.set('board', 'shared', 'tt-logs', logs);
+  const cardMins = logs.filter(l => l.cardId === cardId).reduce((s, l) => s + l.mins, 0);
+  await t.set('card', 'shared', 'tt-total', cardMins);
+  renderLog();
+}
+
+// ── Render logu ───────────────────────────────────────────
+async function renderLog() {
+  const logs = (await t.get('board', 'shared', 'tt-logs') || [])
+    .filter(l => l.cardId === cardId);
+
+  // Tracker vidí jen svůj čas, admin vidí vše
+  const visible = isAdmin ? logs : logs.filter(l => l.memberId === currentMember.id);
+  const el = document.getElementById('log-list');
+
+  if (!visible.length) {
+    el.innerHTML = '<div class="empty">Žádné záznamy</div>';
+    return;
+  }
+
+  el.innerHTML = [...visible].reverse().map(l => {
+    const color = memberColor(l.memberId);
+    const ini = initials(l.memberName);
+    // Smazat může admin, nebo vlastník svůj záznam
+    const canDel = isAdmin || l.memberId === currentMember.id;
+    return `
+      <div class="log-entry">
+        <div class="avatar" style="background:${color}">${ini}</div>
+        <div class="log-info">
+          <div class="log-desc">${l.desc || '—'}</div>
+          <div class="log-meta">${l.memberName} · ${l.date}</div>
+        </div>
+        <div class="log-time">${fmtHM(l.mins)}</div>
+        ${canDel ? `<button class="log-del" onclick="deleteLog('${l.id}')">×</button>` : ''}
+      </div>
+    `;
+  }).join('');
+}
+
+init();
+</script>
+</body>
+</html>
