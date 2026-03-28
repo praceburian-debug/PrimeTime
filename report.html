@@ -22,6 +22,22 @@
   .eb{padding:5px 14px;border-radius:7px;border:1px solid var(--b2);background:transparent;color:var(--m);font-size:12px;font-family:var(--f);cursor:pointer;transition:all .15s;}
   .eb:hover{background:var(--s2);color:var(--txt);}
 
+  /* ── Vlastní rozmezí picker ── */
+  .custom-wrap{position:relative;}
+  #custom-picker{display:none;position:absolute;top:calc(100% + 8px);right:0;background:var(--s);border:1px solid var(--b2);border-radius:12px;padding:16px;z-index:200;width:256px;box-shadow:0 12px 40px rgba(0,0,0,0.55);}
+  #custom-picker.open{display:block;}
+  .cp-title{font-size:11px;color:var(--m);text-transform:uppercase;letter-spacing:.08em;font-weight:600;margin-bottom:12px;}
+  .cp-row{display:flex;flex-direction:column;gap:4px;margin-bottom:10px;}
+  .cp-label{font-size:11px;color:var(--m);font-weight:500;}
+  .cp-date{font-family:var(--f);font-size:12px;background:var(--s2);border:1px solid var(--b2);border-radius:7px;padding:7px 10px;color:var(--txt);outline:none;width:100%;cursor:pointer;}
+  .cp-date:focus{border-color:var(--ac);}
+  .cp-date::-webkit-calendar-picker-indicator{filter:invert(0.6);}
+  .cp-footer{display:flex;gap:8px;margin-top:4px;}
+  .cp-apply{flex:1;padding:8px;background:var(--ac);color:white;border:none;border-radius:7px;font-size:12px;font-weight:600;font-family:var(--f);cursor:pointer;}
+  .cp-apply:hover{background:#7C6AF0;}
+  .cp-cancel{padding:8px 12px;background:transparent;color:var(--m);border:1px solid var(--b2);border-radius:7px;font-size:12px;font-family:var(--f);cursor:pointer;}
+  .cp-cancel:hover{background:var(--s2);color:var(--txt);}
+
   /* Main */
   .mn{padding:1.5rem 2rem;max-width:1100px;margin:0 auto;}
 
@@ -168,6 +184,18 @@
     <button class="fb a" onclick="setPeriod('week',this)">Tento týden</button>
     <button class="fb" onclick="setPeriod('month',this)">Tento měsíc</button>
     <button class="fb" onclick="setPeriod('all',this)">Vše</button>
+    <div class="custom-wrap">
+      <button class="fb" id="btn-custom" onclick="togglePicker(this)">Vlastní</button>
+      <div id="custom-picker">
+        <div class="cp-title">Vlastní rozmezí</div>
+        <div class="cp-row"><span class="cp-label">Od</span><input type="date" class="cp-date" id="cp-from"></div>
+        <div class="cp-row"><span class="cp-label">Do</span><input type="date" class="cp-date" id="cp-to"></div>
+        <div class="cp-footer">
+          <button class="cp-apply" onclick="applyCustom()">Použít</button>
+          <button class="cp-cancel" onclick="closePicker()">Zrušit</button>
+        </div>
+      </div>
+    </div>
     <button class="eb" onclick="exportCSV()">⬇ CSV</button>
   </div>
 </div>
@@ -256,13 +284,20 @@ function mc(id){let h=0;for(const c of String(id))h=(h*31+c.charCodeAt(0))&0xfff
 function ini(n){const p=(n||'?').trim().split(' ');return(p[0][0]+(p[1]?.[0]||'')).toUpperCase();}
 function fmtHM(m){const h=Math.floor(m/60),mm=m%60;return h>0?h+'h '+mm+'m':mm+'m';}
 
-let allLogs=[],cardNames={},cardLbls={},period='week';
+let allLogs=[],cardNames={},cardLbls={},period='week',customFrom='',customTo='';
 let lf={m:'',c:'',l:'',d:'',f:'',t:''};
 // Stav otevřených skupin — key = cardId, value = bool
 let openGroups={};
 
 function byP(logs){
   if(period==='all')return logs;
+  if(period==='custom'){
+    return logs.filter(l=>{
+      if(customFrom&&l.date<customFrom)return false;
+      if(customTo&&l.date>customTo)return false;
+      return true;
+    });
+  }
   const now=new Date();
   return logs.filter(l=>{
     const d=new Date(l.date);
@@ -297,7 +332,8 @@ function rS(logs){
   const tot=logs.reduce((s,l)=>s+l.mins,0);
   document.getElementById('s1').textContent=fmtHM(tot);
   document.getElementById('s2').textContent=logs.length;
-  document.getElementById('s1b').textContent=period==='week'?'tento týden':period==='month'?'tento měsíc':'celkem';
+  const periodLabel=period==='week'?'tento týden':period==='month'?'tento měsíc':period==='custom'?(customFrom&&customTo?customFrom+' – '+customTo:customFrom||customTo||'vlastní rozmezí'):'celkem';
+  document.getElementById('s1b').textContent=periodLabel;
   document.getElementById('s3').textContent=[...new Set(logs.map(l=>l.memberId))].length;
   const mm={},mn={};logs.forEach(l=>{mm[l.memberId]=(mm[l.memberId]||0)+l.mins;mn[l.memberId]=l.memberName;});
   const top=Object.entries(mm).sort((a,b)=>b[1]-a[1])[0];
@@ -449,7 +485,51 @@ function toggleGroup(cardId, rowEl){
   if(body)body.classList.toggle('open',openGroups[cardId]);
 }
 
-function setPeriod(p,btn){period=p;document.querySelectorAll('.fb').forEach(b=>b.classList.remove('a'));btn.classList.add('a');renderAll();}
+function setPeriod(p,btn){
+  period=p;
+  document.querySelectorAll('.fb').forEach(b=>b.classList.remove('a'));
+  btn.classList.add('a');
+  closePicker();
+  renderAll();
+}
+
+// ── Custom picker ──────────────────────────────────────────
+function togglePicker(btn){
+  const picker=document.getElementById('custom-picker');
+  const isOpen=picker.classList.contains('open');
+  if(isOpen){closePicker();}
+  else{
+    picker.classList.add('open');
+    btn.classList.add('a');
+    // Předvyplnit aktuální rozmezí pokud custom
+    if(period==='custom'){
+      document.getElementById('cp-from').value=customFrom;
+      document.getElementById('cp-to').value=customTo;
+    }
+  }
+}
+function closePicker(){
+  document.getElementById('custom-picker').classList.remove('open');
+  if(period!=='custom') document.getElementById('btn-custom').classList.remove('a');
+}
+function applyCustom(){
+  customFrom=document.getElementById('cp-from').value;
+  customTo=document.getElementById('cp-to').value;
+  if(!customFrom&&!customTo){closePicker();return;}
+  period='custom';
+  document.querySelectorAll('.fb').forEach(b=>b.classList.remove('a'));
+  document.getElementById('btn-custom').classList.add('a');
+  // Zobraz rozmezí v tlačítku
+  const label=customFrom&&customTo?customFrom.slice(5)+' – '+customTo.slice(5):customFrom||customTo;
+  document.getElementById('btn-custom').textContent=label;
+  closePicker();
+  renderAll();
+}
+// Zavři picker klikem mimo
+document.addEventListener('click',e=>{
+  const wrap=document.querySelector('.custom-wrap');
+  if(wrap&&!wrap.contains(e.target))closePicker();
+});
 function setTab(tab,btn){document.querySelectorAll('.tab').forEach(b=>b.classList.remove('a'));btn.classList.add('a');['m','c','l'].forEach(n=>document.getElementById('tab-'+n).style.display=n===tab?'block':'none');}
 
 function exportCSV(){
