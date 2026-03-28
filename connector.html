@@ -7,9 +7,10 @@
 </head>
 <body>
 <script>
-const ICON_TIMER='https://cdn.jsdelivr.net/npm/lucide-static@0.441.0/icons/timer.svg';
-const ICON_CLOCK='https://cdn.jsdelivr.net/npm/lucide-static@0.441.0/icons/clock.svg';
-const ICON_CHART='https://cdn.jsdelivr.net/npm/lucide-static@0.441.0/icons/bar-chart-2.svg';
+const ICON_TIMER   = 'https://cdn.jsdelivr.net/npm/lucide-static@0.441.0/icons/timer.svg';
+const ICON_CLOCK   = 'https://cdn.jsdelivr.net/npm/lucide-static@0.441.0/icons/clock.svg';
+const ICON_CHART   = 'https://cdn.jsdelivr.net/npm/lucide-static@0.441.0/icons/bar-chart-2.svg';
+const ICON_COMMENT = 'https://cdn.jsdelivr.net/npm/lucide-static@0.441.0/icons/message-square-clock.svg';
 
 async function getPerms(t){return(await t.get('board','shared','tt-permissions'))||{admins:[],trackers:[]};}
 async function getMid(t){return(await t.member('id')).id;}
@@ -50,6 +51,24 @@ TrelloPowerUp.initialize({
       badges.push({title:'Můj čas',text:'👤 '+fmtHM(myM),color:'green',icon:ICON_CLOCK,callback:open});
     }
     return badges;
+  },
+
+  // Tlačítko "Naplánovat komentář" v postranní liště karty
+  // Zobrazí se všem členům — autorizace probíhá až uvnitř popupu
+  'card-buttons':async(t)=>{
+    // Zjistíme počet čekajících jobů pro badge na tlačítku
+    const jobs=await t.get('member','private','pt-jobs')||[];
+    const card=await t.card('id');
+    const pending=jobs.filter(j=>j.cardId===card.id&&new Date(j.sendAt)>new Date());
+    return[{
+      icon:  ICON_COMMENT,
+      text:  pending.length>0?`Naplánovat komentář (${pending.length})`:'Naplánovat komentář',
+      callback:(t)=>t.popup({
+        title:  'PrimeTime – Naplánovat komentář',
+        url:    './schedule-popup.html',
+        height: 520,
+      }),
+    }];
   },
 
   'board-buttons':async(t)=>{
