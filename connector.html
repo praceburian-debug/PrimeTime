@@ -133,16 +133,16 @@ TrelloPowerUp.initialize({
     const allowed = await canTrack(t);
     if (!allowed) return []; // Člen bez přístupu tlačítko VŮBEC nevidí
 
-    return [{
-      icon: ICON_TIMER,
-      text: 'Sledovat čas',
-      callback: (t) => t.popup({
-        title: 'TimeTrack',
-        url: './tracker-popup.html',
-        height: 480,
-      }),
-    }];
-  },
+   return [{
+  icon: ICON_TIMER,
+  text: 'Sledovat čas',
+  callback: (t) => t.popup({
+    title: 'TimeTrack',
+    url: './tracker-popup.html',
+    // Odstraň fixní height, pokud používáš t.sizeTo() v popupu, 
+    // nebo ji nastav jako maximální/počáteční.
+  }),
+}];
 
   // Tlačítko na nástěnce – report (jen admini) + nastavení
   'board-buttons': async (t) => {
