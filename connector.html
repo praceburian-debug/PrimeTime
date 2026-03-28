@@ -10,7 +10,7 @@
 const ICON_TIMER   = 'https://cdn.jsdelivr.net/npm/lucide-static@0.441.0/icons/timer.svg';
 const ICON_CLOCK   = 'https://cdn.jsdelivr.net/npm/lucide-static@0.441.0/icons/clock.svg';
 const ICON_CHART   = 'https://cdn.jsdelivr.net/npm/lucide-static@0.441.0/icons/bar-chart-2.svg';
-const ICON_COMMENT = 'https://cdn.jsdelivr.net/npm/lucide-static@0.441.0/icons/message-square-clock.svg';
+const ICON_COMMENT = 'https://cdn.jsdelivr.net/npm/lucide-static@0.441.0/icons/message-square.svg';
 
 async function getPerms(t){return(await t.get('board','shared','tt-permissions'))||{admins:[],trackers:[]};}
 async function getMid(t){return(await t.member('id')).id;}
@@ -21,6 +21,22 @@ function fmtHM(m){const h=Math.floor(m/60),mm=m%60;return h>0?h+'h '+mm+'m':mm+'
 function fmtRun(startedAt){const s=Math.floor((Date.now()-startedAt)/1000),h=Math.floor(s/3600),m=Math.floor((s%3600)/60);return h>0?h+':'+String(m).padStart(2,'0')+' běží':m+'m běží';}
 
 TrelloPowerUp.initialize({
+
+  // authorization-status — Trello se ptá jestli je aktuální člen autorizovaný
+  // Vrátíme authorized:true pokud máme uložený příznak v member private storage
+  'authorization-status': async (t) => {
+    const authorized = await t.get('member', 'private', 'pt-authorized');
+    return { authorized: authorized === true };
+  },
+
+  // show-authorize — Trello zobrazí tlačítko "Autorizovat" v nastavení Power-Upu
+  'show-authorize': (t) => {
+    return t.popup({
+      title: 'PrimeTime – Autorizace',
+      url:   './authorize.html',
+      height: 200,
+    });
+  },
 
   'card-badges':async(t)=>{
     if(!await canTrack(t))return[];
@@ -53,16 +69,13 @@ TrelloPowerUp.initialize({
     return badges;
   },
 
-  // Tlačítko "Naplánovat komentář" v postranní liště karty
-  // Zobrazí se všem členům — autorizace probíhá až uvnitř popupu
   'card-buttons':async(t)=>{
-    // Zjistíme počet čekajících jobů pro badge na tlačítku
     const jobs=await t.get('member','private','pt-jobs')||[];
     const card=await t.card('id');
     const pending=jobs.filter(j=>j.cardId===card.id&&new Date(j.sendAt)>new Date());
     return[{
-      icon:  ICON_COMMENT,
-      text:  pending.length>0?`Naplánovat komentář (${pending.length})`:'Naplánovat komentář',
+      icon: ICON_COMMENT,
+      text: pending.length>0?`Naplánovat komentář (${pending.length})`:'Naplánovat komentář',
       callback:(t)=>t.popup({
         title:  'PrimeTime – Naplánovat komentář',
         url:    './schedule-popup.html',

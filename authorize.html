@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<title>PrimeTime – Autorizace</title>
+<script src="https://p.trellocdn.com/power-up.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+  *{box-sizing:border-box;margin:0;padding:0;}
+  :root{--bg:#0D0D0F;--s2:#1E1E24;--b2:rgba(255,255,255,0.15);--txt:#F0EFE8;--m:#7A7A88;--ac:#6C5CE7;--f:'Inter',sans-serif;}
+  html{background:var(--bg);}
+  body{font-family:var(--f);background:var(--bg);color:var(--txt);width:268px;padding:14px;}
+
+  .title{font-size:13px;font-weight:600;margin-bottom:6px;}
+  .desc{font-size:11px;color:var(--m);line-height:1.5;margin-bottom:14px;}
+
+  .btn{width:100%;padding:10px;background:var(--ac);color:white;border:none;border-radius:8px;font-size:13px;font-weight:600;font-family:var(--f);cursor:pointer;transition:background .15s;display:flex;align-items:center;justify-content:center;gap:6px;}
+  .btn:hover{background:#7C6AF0;}
+  .btn:disabled{opacity:.5;cursor:not-allowed;}
+
+  .spin{display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,.3);border-top-color:white;border-radius:50%;animation:spin .7s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  .err{margin-top:8px;padding:7px 9px;border-radius:6px;font-size:11px;background:rgba(214,48,49,.14);color:#FF7675;display:none;}
+  .err.show{display:block;}
+</style>
+</head>
+<body>
+<div class="title">Propojit PrimeTime s Trello</div>
+<div class="desc">Jednorázové povolení pro odesílání naplánovaných komentářů tvým jménem. Token bude zašifrovaně uložen a kdykoliv ho můžeš odvolat.</div>
+<button class="btn" id="btn" onclick="authorize()">Autorizovat</button>
+<div class="err" id="err"></div>
+
+<script>
+const BACKEND = 'https://prime-time.vercel.app';
+const t = TrelloPowerUp.iframe();
+
+async function authorize() {
+  const btn = document.getElementById('btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span> Autorizuji…';
+
+  try {
+    const restApi = await t.getRestApi();
+    const token   = await restApi.getToken();
+    const member  = await t.member('id', 'fullName');
+
+    const res  = await fetch(`${BACKEND}/api/auth`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ memberId: member.id, token }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Chyba autorizace');
+
+    await t.set('member', 'private', 'pt-authorized', true);
+    t.closePopup();
+  } catch(e) {
+    btn.disabled = false;
+    btn.textContent = 'Autorizovat';
+    const err = document.getElementById('err');
+    err.textContent = 'Chyba: ' + e.message;
+    err.classList.add('show');
+  }
+}
+</script>
+</body>
+</html>

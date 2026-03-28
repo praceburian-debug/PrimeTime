@@ -2,6 +2,8 @@
   "name": "PrimeTime",
   "details": "Time tracking a naplánované komentáře pro Trello.",
   "capabilities": [
+    "authorization-status",
+    "show-authorize",
     "card-badges",
     "card-detail-badges",
     "card-buttons",
