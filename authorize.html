@@ -10,17 +10,13 @@
   :root{--bg:#0D0D0F;--s2:#1E1E24;--b2:rgba(255,255,255,0.15);--txt:#F0EFE8;--m:#7A7A88;--ac:#6C5CE7;--f:'Inter',sans-serif;}
   html{background:var(--bg);}
   body{font-family:var(--f);background:var(--bg);color:var(--txt);width:268px;padding:14px;}
-
   .title{font-size:13px;font-weight:600;margin-bottom:6px;}
   .desc{font-size:11px;color:var(--m);line-height:1.5;margin-bottom:14px;}
-
   .btn{width:100%;padding:10px;background:var(--ac);color:white;border:none;border-radius:8px;font-size:13px;font-weight:600;font-family:var(--f);cursor:pointer;transition:background .15s;display:flex;align-items:center;justify-content:center;gap:6px;}
   .btn:hover{background:#7C6AF0;}
   .btn:disabled{opacity:.5;cursor:not-allowed;}
-
   .spin{display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,.3);border-top-color:white;border-radius:50%;animation:spin .7s linear infinite;}
   @keyframes spin{to{transform:rotate(360deg);}}
-
   .err{margin-top:8px;padding:7px 9px;border-radius:6px;font-size:11px;background:rgba(214,48,49,.14);color:#FF7675;display:none;}
   .err.show{display:block;}
 </style>
@@ -32,8 +28,15 @@
 <div class="err" id="err"></div>
 
 <script>
-const BACKEND = 'https://prime-time.vercel.app';
-const t = TrelloPowerUp.iframe({ appKey: "e4d8502325aff04bbe003d7c3eea4acf", appName: "PrimeTime" });
+const BACKEND  = 'https://prime-time.vercel.app';
+const APP_KEY  = 'e4d8502325aff04bbe003d7c3eea4acf';
+const APP_NAME = 'PrimeTime';
+
+// Použijeme TrelloPowerUp.authorize() — správný způsob pro OAuth z iframe
+const t = TrelloPowerUp.iframe({
+  appKey:  APP_KEY,
+  appName: APP_NAME,
+});
 
 async function authorize() {
   const btn = document.getElementById('btn');
@@ -41,9 +44,15 @@ async function authorize() {
   btn.innerHTML = '<span class="spin"></span> Autorizuji…';
 
   try {
-    const restApi = await t.getRestApi();
-    const token   = await restApi.getToken();
-    const member  = await t.member('id', 'fullName');
+    // TrelloPowerUp.authorize otevře OAuth okno a vrátí token
+    const token = await TrelloPowerUp.authorize({
+      scope:        'read,write',
+      expiration:   'never',
+      name:         APP_NAME,
+      key:          APP_KEY,
+    });
+
+    const member = await t.member('id', 'fullName');
 
     const res  = await fetch(`${BACKEND}/api/auth`, {
       method:  'POST',
