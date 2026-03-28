@@ -7,13 +7,12 @@
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
   *{box-sizing:border-box;margin:0;padding:0;}
-  :root{--bg:#0D0D0F;--s2:#1E1E24;--b2:rgba(255,255,255,0.15);--txt:#F0EFE8;--m:#7A7A88;--ac:#6C5CE7;--f:'Inter',sans-serif;}
+  :root{--bg:#0D0D0F;--txt:#F0EFE8;--m:#7A7A88;--ac:#6C5CE7;--f:'Inter',sans-serif;}
   html{background:var(--bg);}
   body{font-family:var(--f);background:var(--bg);color:var(--txt);width:268px;padding:14px;}
   .title{font-size:13px;font-weight:600;margin-bottom:6px;}
   .desc{font-size:11px;color:var(--m);line-height:1.5;margin-bottom:14px;}
-  .btn{width:100%;padding:10px;background:var(--ac);color:white;border:none;border-radius:8px;font-size:13px;font-weight:600;font-family:var(--f);cursor:pointer;transition:background .15s;display:flex;align-items:center;justify-content:center;gap:6px;}
-  .btn:hover{background:#7C6AF0;}
+  .btn{width:100%;padding:10px;background:var(--ac);color:white;border:none;border-radius:8px;font-size:13px;font-weight:600;font-family:var(--f);cursor:pointer;}
   .btn:disabled{opacity:.5;cursor:not-allowed;}
   .spin{display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,.3);border-top-color:white;border-radius:50%;animation:spin .7s linear infinite;}
   @keyframes spin{to{transform:rotate(360deg);}}
@@ -23,54 +22,73 @@
 </head>
 <body>
 <div class="title">Propojit PrimeTime s Trello</div>
-<div class="desc">Jednorázové povolení pro odesílání naplánovaných komentářů tvým jménem. Token bude zašifrovaně uložen a kdykoliv ho můžeš odvolat.</div>
+<div class="desc">Jednorázové povolení pro odesílání naplánovaných komentářů tvým jménem.</div>
 <button class="btn" id="btn" onclick="authorize()">Autorizovat</button>
 <div class="err" id="err"></div>
 
 <script>
-const BACKEND  = 'https://prime-time.vercel.app';
-const APP_KEY  = 'e4d8502325aff04bbe003d7c3eea4acf';
-const APP_NAME = 'PrimeTime';
+const BACKEND = 'https://prime-time.vercel.app';
+const APP_KEY = 'e4d8502325aff04bbe003d7c3eea4acf';
+// return_url musí být v Allowed Origins na trello.com/app-key
+const RETURN_URL = 'https://praceburian-debug.github.io/PrimeTime/authorize.html';
 
-// Použijeme TrelloPowerUp.authorize() — správný způsob pro OAuth z iframe
 const t = TrelloPowerUp.iframe({
   appKey:  APP_KEY,
-  appName: APP_NAME,
+  appName: 'PrimeTime',
 });
 
-async function authorize() {
+function authorize() {
   const btn = document.getElementById('btn');
+  const err = document.getElementById('err');
   btn.disabled = true;
-  btn.innerHTML = '<span class="spin"></span> Autorizuji…';
+  btn.innerHTML = '<span class="spin"></span>';
+  err.classList.remove('show');
 
-  try {
-    // TrelloPowerUp.authorize otevře OAuth okno a vrátí token
-    const token = await TrelloPowerUp.authorize({
-      scope:        'read,write',
-      expiration:   'never',
-      name:         APP_NAME,
-      key:          APP_KEY,
-    });
+  // Otevři Trello OAuth popup
+  const authUrl = `https://trello.com/1/authorize`
+    + `?expiration=never`
+    + `&scope=read,write`
+    + `&response_type=token`
+    + `&key=${APP_KEY}`
+    + `&callback_method=postMessage`
+    + `&return_url=${encodeURIComponent(RETURN_URL)}`;
 
-    const member = await t.member('id', 'fullName');
+  const popup = window.open(authUrl, 'trello-auth', 'width=500,height=600');
 
-    const res  = await fetch(`${BACKEND}/api/auth`, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ memberId: member.id, token }),
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Chyba autorizace');
+  // Přijmi token přes postMessage
+  window.addEventListener('message', async function handler(e) {
+    if (e.origin !== 'https://trello.com') return;
+    window.removeEventListener('message', handler);
+    if (popup) popup.close();
 
-    await t.set('member', 'private', 'pt-authorized', true);
-    t.closePopup();
-  } catch(e) {
-    btn.disabled = false;
-    btn.textContent = 'Autorizovat';
-    const err = document.getElementById('err');
-    err.textContent = 'Chyba: ' + e.message;
-    err.classList.add('show');
-  }
+    const token = e.data;
+    if (!token || typeof token !== 'string') {
+      btn.disabled = false;
+      btn.textContent = 'Autorizovat';
+      err.textContent = 'Autorizace zrušena';
+      err.classList.add('show');
+      return;
+    }
+
+    try {
+      const member = await t.member('id', 'fullName');
+      const res = await fetch(`${BACKEND}/api/auth`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ memberId: member.id, token }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Backend chyba');
+
+      await t.set('member', 'private', 'pt-authorized', true);
+      t.closePopup();
+    } catch(e2) {
+      btn.disabled = false;
+      btn.textContent = 'Autorizovat';
+      err.textContent = e2.message;
+      err.classList.add('show');
+    }
+  });
 }
 </script>
 </body>
