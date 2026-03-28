@@ -1,34 +1,65 @@
-# PrimeTime – Trello Power-Up
+# PrimeTime Backend
 
-Time tracking pro Trello inspirovaný ClickUpem.
+Serverless backend pro naplánované Trello komentáře.
 
-## Soubory
+## Stack
+- **Vercel** Edge Functions — API endpointy
+- **Upstash QStash** — scheduling HTTP requestů
+- **Upstash Redis** — uložení tokenů + metadata jobů
 
-| Soubor | Popis |
-|--------|-------|
-| `connector.html` | Entry point Power-Upu, registruje capabilities |
-| `tracker-popup.html` | Popup s časovačem (300px, otevírá se z badge) |
-| `report.html` | Time Report – fullscreen modal pro adminy |
-| `settings.html` | Správa přístupů – kdo trackuje, kdo je admin |
-| `no-access.html` | Zobrazí se členům bez admin práv |
-| `manifest.json` | Metadata Power-Upu |
+## Endpointy
 
-## Permissions model
+| Endpoint | Volá | Popis |
+|----------|------|-------|
+| `POST /api/auth` | Power-Up | Uloží OAuth token člena |
+| `POST /api/schedule` | Power-Up | Naplánuje komentář přes QStash |
+| `POST /api/send-comment` | QStash | Odešle komentář v daný čas |
+| `POST /api/revoke` | Power-Up | Odvolá token a zruší čekající joby |
 
-| Role | Časovač | Report | Nastavení |
-|------|---------|--------|-----------|
-| **Admin** | ✓ | Vidí vše | ✓ |
-| **Tracker** | ✓ | Jen svůj čas | ✗ |
-| **Bez přístupu** | ✗ (badge se nezobrazí) | ✗ | ✗ |
+## Deploy
 
-První kdo otevře nastavení = automaticky Super Admin.
+### 1. Naklonuj repo a nainstaluj závislosti
+```bash
+git clone https://github.com/tvuj-ucet/primetime-backend
+cd primetime-backend
+npm install
+```
 
-## Nasazení
+### 2. Vygeneruj šifrovací klíč
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
+Zkopíruj výstup — to je tvůj `TOKEN_ENCRYPTION_KEY`.
 
-1. Nahraj všechny soubory do GitHub repo `PrimeTime` (branch `main`)
-2. Zapni GitHub Pages → `main` branch → root
-3. V [Trello Power-Up Admin](https://trello.com/power-ups/admin):
-   - Iframe connector URL: `https://praceburian-debug.github.io/PrimeTime/connector.html`
-   - API Key: `e4d8502325aff04bbe003d7c3eea4acf`
-   - Capabilities: `card-badges`, `card-detail-badges`, `board-buttons`, `show-settings`
-4. Přidej Power-Up na nástěnku → otevři nastavení (ozubené kolečko) → přiřaď role
+### 3. Nastav environment variables na Vercel
+V Vercel dashboardu → Settings → Environment Variables přidej:
+
+```
+TRELLO_API_KEY              = (z trello.com/power-ups/admin)
+TRELLO_OAUTH_SECRET         = (z trello.com/power-ups/admin)
+UPSTASH_REDIS_REST_URL      = (z Upstash console → Redis → primetime-store)
+UPSTASH_REDIS_REST_TOKEN    = (z Upstash console → Redis → primetime-store)
+QSTASH_TOKEN                = (z Upstash console → QStash)
+QSTASH_CURRENT_SIGNING_KEY  = (z Upstash console → QStash)
+QSTASH_NEXT_SIGNING_KEY     = (z Upstash console → QStash)
+TOKEN_ENCRYPTION_KEY        = (vygenerovaný klíč z kroku 2)
+BACKEND_URL                 = https://primetime-backend.vercel.app
+ALLOWED_ORIGIN              = https://praceburian-debug.github.io
+```
+
+### 4. Deploy
+```bash
+npm i -g vercel
+vercel --prod
+```
+
+Po deployi zkopíruj URL (např. `https://primetime-backend-xyz.vercel.app`) a:
+- Nastav ji jako `BACKEND_URL` v Vercel env vars
+- Přidej ji do Trello Power-Up Allowed Origins
+
+## Redis key schéma
+```
+token:{memberId}         → AES-256-GCM zašifrovaný OAuth token (TTL 1 rok)
+scheduled:{jobId}        → JSON metadata jobu (TTL sendAt + 48h)
+member:{memberId}:jobs   → SET jobIds čekajících jobů člena
+```
