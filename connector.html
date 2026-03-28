@@ -9,180 +9,192 @@
 <script>
 // ─────────────────────────────────────────────────────────────
 // TimeTrack Power-Up – Connector
-// Registruje capabilities u Trello. Žádné UI zde není.
-// Data jsou uložena přes t.set() do Trello plugin storage.
 //
 // STORAGE SCHÉMA:
-//   board / shared / 'tt-permissions'  → { admins: [memberId], trackers: [memberId] }
-//   board / shared / 'tt-logs'         → [ { id, memberId, cardId, mins, desc, date } ]
-//   card  / shared / 'tt-total'        → číslo (minuty, cache pro badge)
+//   board / shared / 'tt-permissions'
+//     → { admins: [memberId, …], trackers: [memberId, …] }
+//   board / shared / 'tt-logs'
+//     → [{ id, memberId, memberName, cardId, mins, desc, date }, …]
+//   card  / shared / 'tt-total'
+//     → number (minuty – cache pro card-badges v board view)
+//   member / private / 'tt-running-{cardId}'
+//     → { startedAt: timestamp } | null
 // ─────────────────────────────────────────────────────────────
 
 const ICON_TIMER = 'https://cdn.jsdelivr.net/npm/lucide-static@0.441.0/icons/timer.svg';
 const ICON_CLOCK = 'https://cdn.jsdelivr.net/npm/lucide-static@0.441.0/icons/clock.svg';
 const ICON_CHART = 'https://cdn.jsdelivr.net/npm/lucide-static@0.441.0/icons/bar-chart-2.svg';
 
-// ── Helpers ──────────────────────────────────────────────────
+// ── Helpers ───────────────────────────────────────────────────
 
 async function getPermissions(t) {
-  const perms = await t.get('board', 'shared', 'tt-permissions');
-  return perms || { admins: [], trackers: [] };
+  return (await t.get('board', 'shared', 'tt-permissions')) || { admins: [], trackers: [] };
 }
 
 async function getCurrentMemberId(t) {
-  const member = await t.member('id');
-  return member.id;
+  return (await t.member('id')).id;
 }
 
 async function isAdmin(t) {
   const [perms, memberId] = await Promise.all([getPermissions(t), getCurrentMemberId(t)]);
-  // První člen co Power-Up nainstaluje se stane super adminem automaticky
-  if (perms.admins.length === 0) return true;
+  if (perms.admins.length === 0) return true; // první spuštění → automaticky admin
   return perms.admins.includes(memberId);
 }
 
 async function canTrack(t) {
   const [perms, memberId] = await Promise.all([getPermissions(t), getCurrentMemberId(t)]);
-  // Admini mohou vždy trackovat
-  if (perms.admins.includes(memberId)) return true;
-  // Pokud žádní trackeri nejsou nastaveni, nikdo nemůže
+  if (perms.admins.includes(memberId)) return true;  // admini trackují vždy
   return perms.trackers.includes(memberId);
 }
 
 async function getLogs(t) {
-  const logs = await t.get('board', 'shared', 'tt-logs');
-  return logs || [];
-}
-
-async function saveLogs(t, logs) {
-  await t.set('board', 'shared', 'tt-logs', logs);
+  return (await t.get('board', 'shared', 'tt-logs')) || [];
 }
 
 function fmtHM(mins) {
   const h = Math.floor(mins / 60), m = mins % 60;
-  if (h === 0) return `${m}m`;
-  return `${h}h ${m}m`;
+  return h > 0 ? `${h}h ${m}m` : `${m}m`;
 }
 
-// ── Capabilities ─────────────────────────────────────────────
+function fmtRunning(startedAt) {
+  const secs  = Math.floor((Date.now() - startedAt) / 1000);
+  const h     = Math.floor(secs / 3600);
+  const m     = Math.floor((secs % 3600) / 60);
+  return h > 0 ? `${h}:${String(m).padStart(2,'0')} běží` : `${m}m běží`;
+}
+
+// ── Capabilities ──────────────────────────────────────────────
 
 TrelloPowerUp.initialize({
 
-  // Badge na kartě – zobrazuje celkový čas (vidí jen trackeři + admini)
+  // ── card-badges ───────────────────────────────────────────
+  // Malý badge viditelný přímo na kartičce v board view (bez otevření).
+  // Neklikací. Zobrazuje celkový čas – jen trackerům a adminům.
   'card-badges': async (t) => {
     const allowed = await canTrack(t);
     if (!allowed) return [];
 
-    const card = await t.card('id');
-    const logs = await getLogs(t);
-    const cardLogs = logs.filter(l => l.cardId === card.id);
-    const totalMins = cardLogs.reduce((s, l) => s + l.mins, 0);
+    const card     = await t.card('id');
+    const logs     = await getLogs(t);
+    const totalMins = logs
+      .filter(l => l.cardId === card.id)
+      .reduce((s, l) => s + l.mins, 0);
 
     if (totalMins === 0) return [];
 
-    return [{
-      icon: ICON_CLOCK,
-      text: fmtHM(totalMins),
-      color: 'purple',
-    }];
+    return [{ icon: ICON_CLOCK, text: fmtHM(totalMins), color: 'purple' }];
   },
 
-  // Rozšířený badge v detailu karty
+  // ── card-detail-badges ────────────────────────────────────
+  // Badge(s) zobrazené v detailu otevřené karty hned pod názvem,
+  // vedle štítků, členů a termínu. KLIKACÍ → otevře tracker popup.
+  //
+  // Pravidla viditelnosti:
+  //   Bez přístupu  → nic (return [])
+  //   Tracker       → 1 badge: "▶ Spustit" nebo "▶ Xh Ym" (jen svůj čas)
+  //                   při běžícím timeru: "● 5m běží" (zelená)
+  //   Admin         → 1 badge: "▶ Xh Ym celkem" (čas všech)
+  //                   + 2. badge: "👤 Xh Ym" pokud má i svůj vlastní čas
+  //                   při běžícím timeru: "● 5m běží" (zelená)
   'card-detail-badges': async (t) => {
     const allowed = await canTrack(t);
     if (!allowed) return [];
 
-    const [card, memberId] = await Promise.all([t.card('id'), getCurrentMemberId(t)]);
-    const [logs, admin] = await Promise.all([getLogs(t), isAdmin(t)]);
+    const [card, memberId, admin] = await Promise.all([
+      t.card('id'),
+      getCurrentMemberId(t),
+      isAdmin(t),
+    ]);
 
-    const cardLogs = logs.filter(l => l.cardId === card.id);
+    const [logs, running] = await Promise.all([
+      getLogs(t),
+      t.get('member', 'private', `tt-running-${card.id}`),
+    ]);
 
-    // Tracker vidí jen svůj čas, admin vidí vše
-    const visibleLogs = admin
-      ? cardLogs
-      : cardLogs.filter(l => l.memberId === memberId);
+    const cardLogs  = logs.filter(l => l.cardId === card.id);
+    const myMins    = cardLogs.filter(l => l.memberId === memberId).reduce((s,l) => s+l.mins, 0);
+    const allMins   = cardLogs.reduce((s,l) => s+l.mins, 0);
+    const isRunning = !!(running?.startedAt);
 
-    const totalMins = visibleLogs.reduce((s, l) => s + l.mins, 0);
-    const myMins = cardLogs.filter(l => l.memberId === memberId).reduce((s, l) => s + l.mins, 0);
+    // Kliknutí vždy otevře tracker popup
+    const openTracker = (t) => t.popup({ title: 'TimeTrack', url: './tracker-popup.html' });
 
     const badges = [];
 
-    if (admin && totalMins > 0) {
+    // Badge 1 – hlavní play/timer badge
+    if (isRunning) {
       badges.push({
-        title: 'Celkový čas (všichni)',
-        text: fmtHM(totalMins),
-        icon: ICON_CLOCK,
-        color: 'purple',
+        title:    'Časovač běží – klikni pro detail',
+        text:     `● ${fmtRunning(running.startedAt)}`,
+        color:    'green',
+        icon:     ICON_TIMER,
+        callback: openTracker,
+        refresh:  30,  // Trello refreshuje badge každých 30s → čas se aktualizuje
+      });
+    } else if (admin) {
+      badges.push({
+        title:    allMins > 0 ? 'Celkový čas týmu – klikni pro tracker' : 'Spustit sledování času',
+        text:     allMins > 0 ? `▶ ${fmtHM(allMins)}` : '▶ Spustit',
+        color:    allMins > 0 ? 'purple' : null,
+        icon:     ICON_TIMER,
+        callback: openTracker,
+      });
+    } else {
+      // Tracker – vidí jen svůj čas
+      badges.push({
+        title:    myMins > 0 ? 'Můj čas – klikni pro tracker' : 'Spustit sledování času',
+        text:     myMins > 0 ? `▶ ${fmtHM(myMins)}` : '▶ Spustit',
+        color:    myMins > 0 ? 'green' : null,
+        icon:     ICON_TIMER,
+        callback: openTracker,
       });
     }
 
-    if (myMins > 0) {
+    // Badge 2 – admin vidí navíc svůj vlastní čas (pokud se liší od celku)
+    if (admin && myMins > 0 && allMins !== myMins) {
       badges.push({
-        title: 'Můj čas',
-        text: fmtHM(myMins),
-        icon: ICON_TIMER,
-        color: myMins > 0 ? 'green' : null,
+        title:    'Můj čas na kartě',
+        text:     `👤 ${fmtHM(myMins)}`,
+        color:    'green',
+        icon:     ICON_CLOCK,
+        callback: openTracker,
       });
     }
 
     return badges;
   },
 
-  // Tlačítko na kartě – otevře tracker (vidí jen trackeři + admini)
-  'card-buttons': async (t) => {
-    const allowed = await canTrack(t);
-    if (!allowed) return []; // Člen bez přístupu tlačítko VŮBEC nevidí
+  // ── board-buttons ─────────────────────────────────────────
+  // Tlačítko v horní liště nástěnky – jen pro adminy.
+  // Otevře fullscreen Time Report modal.
+  'board-buttons': async (t) => {
+    const admin = await isAdmin(t);
+    if (!admin) return [];
 
     return [{
-      icon: ICON_TIMER,
-      text: 'Sledovat čas',
-      callback: (t) => t.popup({
-        title: 'TimeTrack',
-        url: './tracker-popup.html',
-        height: 480,
+      icon:     ICON_CHART,
+      text:     'Time Report',
+      callback: (t) => t.modal({
+        title:      'TimeTrack – Report',
+        url:        './report.html',
+        fullscreen: true,
       }),
     }];
   },
 
-  // Tlačítko na nástěnce – report (jen admini) + nastavení
-  'board-buttons': async (t) => {
-    const [admin] = await Promise.all([isAdmin(t)]);
-    const buttons = [];
-
-    if (admin) {
-      buttons.push({
-        icon: ICON_CHART,
-        text: 'Time Report',
-        callback: (t) => t.modal({
-          title: 'TimeTrack – Report',
-          url: './report.html',
-          fullscreen: true,
-        }),
-      });
-    }
-
-    return buttons;
-  },
-
-  // Nastavení Power-Upu (přes ikonu ozubeného kolečka) – jen admini
+  // ── show-settings ─────────────────────────────────────────
+  // Ozubené kolečko Power-Upu → nastavení přístupů.
+  // Jen admini. Ostatní uvidí "Přístup odepřen".
   'show-settings': async (t) => {
     const admin = await isAdmin(t);
     if (!admin) {
-      return t.popup({
-        title: 'Přístup odepřen',
-        url: './no-access.html',
-        height: 120,
-      });
+      return t.popup({ title: 'Přístup odepřen', url: './no-access.html', height: 100 });
     }
-    return t.popup({
-      title: 'TimeTrack – Nastavení',
-      url: './settings.html',
-      height: 560,
-    });
+    return t.popup({ title: 'TimeTrack – Nastavení', url: './settings.html', height: 560 });
   },
 
 }, {
-  appKey: 'e4d8502325aff04bbe003d7c3eea4acf',   // ← sem vlož svůj Trello API key
+  appKey:  'e4d8502325aff04bbe003d7c3eea4acf',  // ← vlož svůj Trello API key
   appName: 'TimeTrack',
 });
 </script>

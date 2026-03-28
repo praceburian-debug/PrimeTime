@@ -1,0 +1,15 @@
+{
+  "name": "TimeTrack",
+  "details": "ClickUp-inspired time tracking pro Trello. Sleduj čas kliknutím na badge přímo v kartě, nastav soukromí a generuj reporty.",
+  "capabilities": [
+    "card-badges",
+    "card-detail-badges",
+    "board-buttons",
+    "show-settings"
+  ],
+  "connectors": {
+    "iframe": {
+      "url": "https://praceburian-debug.github.io/PrimeTime/connector.html"
+    }
+  }
+}
