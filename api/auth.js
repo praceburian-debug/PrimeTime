@@ -1,74 +1,35 @@
 /**
  * POST /api/auth
- *
- * Power-Up zavolá tento endpoint po tom co uživatel odklikne OAuth.
- * Body: { memberId, token }
- *
- * Endpoint:
- *   1. Ověří token voláním Trello /members/me
- *   2. Zašifruje token
- *   3. Uloží do Redis s TTL 1 rok
- *   4. Vrátí { ok: true, memberName }
+ * Uloží OAuth token člena — zašifrovaně do Redis
  */
 
-import { redis, KEYS }  from '../lib/redis.js';
-import { encrypt }      from '../lib/crypto.js';
-import { getMember }    from '../lib/trello.js';
+import { redis, KEYS } from '../lib/redis.js';
+import { encrypt }     from '../lib/crypto.js';
+import { getMember }   from '../lib/trello.js';
 
-export const config = { runtime: 'edge' };
-
-export default async function handler(req) {
-  if (req.method !== 'POST') {
-    return new Response('Method Not Allowed', { status: 405 });
-  }
-
-  // CORS — povolíme jen z GitHub Pages domény Power-Upu
-  const origin = req.headers.get('origin') || '';
+export default async function handler(req, res) {
+  // CORS
   const allowed = process.env.ALLOWED_ORIGIN || 'https://praceburian-debug.github.io';
-  if (!origin.startsWith(allowed)) {
-    return new Response('Forbidden', { status: 403 });
-  }
+  res.setHeader('Access-Control-Allow-Origin', allowed);
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-  let body;
-  try { body = await req.json(); }
-  catch { return new Response('Invalid JSON', { status: 400 }); }
+  if (req.method === 'OPTIONS') return res.status(204).end();
+  if (req.method !== 'POST')   return res.status(405).json({ error: 'Method Not Allowed' });
 
-  const { memberId, token } = body;
-  if (!memberId || !token) {
-    return new Response(JSON.stringify({ error: 'Chybí memberId nebo token' }), {
-      status: 400, headers: corsHeaders(allowed),
-    });
-  }
+  const { memberId, token } = req.body || {};
+  if (!memberId || !token) return res.status(400).json({ error: 'Chybí memberId nebo token' });
 
   try {
-    // Ověř token u Trella
     const member = await getMember(token);
-    if (member.id !== memberId) {
-      return new Response(JSON.stringify({ error: 'Token nepatří tomuto členovi' }), {
-        status: 403, headers: corsHeaders(allowed),
-      });
-    }
+    if (member.id !== memberId) return res.status(403).json({ error: 'Token nepatří tomuto členovi' });
 
-    // Zašifruj a ulož do Redis, TTL = 365 dní
-    const encrypted = encrypt(token);
+    const encrypted = await encrypt(token);
     await redis.set(KEYS.memberToken(memberId), encrypted, { ex: 60 * 60 * 24 * 365 });
 
-    return new Response(JSON.stringify({ ok: true, memberName: member.fullName }), {
-      status: 200, headers: corsHeaders(allowed),
-    });
+    return res.status(200).json({ ok: true, memberName: member.fullName });
   } catch (err) {
     console.error('auth error:', err);
-    return new Response(JSON.stringify({ error: err.message }), {
-      status: 500, headers: corsHeaders(allowed),
-    });
+    return res.status(500).json({ error: err.message });
   }
-}
-
-function corsHeaders(allowed) {
-  return {
-    'Content-Type': 'application/json',
-    'Access-Control-Allow-Origin': allowed,
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
-  };
 }
