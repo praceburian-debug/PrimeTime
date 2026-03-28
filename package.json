@@ -1,11 +1,9 @@
 {
   "name": "primetime-backend",
   "version": "1.0.0",
-  "description": "PrimeTime Power-Up backend – scheduled Trello comments",
   "private": true,
-  "engines": {
-    "node": ">=18"
-  },
+  "type": "module",
+  "engines": { "node": ">=20" },
   "dependencies": {
     "@upstash/redis": "^1.28.0",
     "@upstash/qstash": "^2.7.0"
