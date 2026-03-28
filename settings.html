@@ -78,7 +78,7 @@ async function init(){
   document.getElementById('content').style.display='block';
   document.getElementById('mlist').innerHTML=board.members.map(m=>{
     const c=mc(m.id),role=roleMap[m.id]||'none',isSelf=m.id===mid;
-    return'<div class="mi"><div class="av" style="background:'+c+'">'+ini(m.fullName)+'</div><div class="mn2"><div class="name">'+m.fullName+(isSelf?'<span class="sb">já</span>':'')+'</div><div class="uname">@'+m.username+'</div></div><select class="rs" id="r-'+m.id+'" onchange="roleMap[\''+m.id+'\']=this.value"'+(isSelf?' disabled':')+'><option value="admin"'+(role==='admin'?' selected':'')+'>Admin</option><option value="tracker"'+(role==='tracker'?' selected':'')+'>Tracker</option><option value="none"'+(role==='none'?' selected':'')+'>Bez přístupu</option></select></div>';
+    return'<div class="mi"><div class="av" style="background:'+c+'">'+ini(m.fullName)+'</div><div class="mn2"><div class="name">'+m.fullName+(isSelf?'<span class="sb">já</span>':'')+'</div><div class="uname">@'+m.username+'</div></div><select class="rs" id="r-'+m.id+'" onchange="roleMap[\''+m.id+'\']=this.value"'+(isSelf?' disabled':'')+'><option value="admin"'+(role==='admin'?' selected':'')+'>Admin</option><option value="tracker"'+(role==='tracker'?' selected':'')+'>Tracker</option><option value="none"'+(role==='none'?' selected':'')+'>Bez přístupu</option></select></div>';
   }).join('');
 }
 async function save(){
