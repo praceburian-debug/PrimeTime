@@ -117,7 +117,8 @@ TrelloPowerUp.initialize({
     const isRunning = !!(running?.startedAt);
 
     // Kliknutí vždy otevře tracker popup
-    const openTracker = (t) => t.popup({ title: 'TimeTrack', url: './tracker-popup.html' });
+    // Modal = fullscreen overlay s drag & resize floating oknem
+    const openTracker = (t) => t.modal({ title: ' ', url: './tracker-modal.html', fullscreen: true });
 
     const badges = [];
 

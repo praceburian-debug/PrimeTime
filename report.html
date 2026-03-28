@@ -5,115 +5,137 @@
 <title>TimeTrack – Report</title>
 <script src="https://p.trellocdn.com/power-up.min.js"></script>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@600;700&family=Inter:wght@400;500&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@600;700&family=Inter:wght@400;500;600&display=swap');
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
-    --bg: #0D0D0F; --surface: #16161A; --surface2: #1E1E24; --surface3: #26262E;
-    --border: rgba(255,255,255,0.08); --border2: rgba(255,255,255,0.14);
-    --text: #F0EFE8; --muted: #7A7A88;
-    --accent: #6C5CE7; --accent2: #A29BFE;
-    --green: #00B894; --green2: #55EFC4;
-    --font-heading: 'Syne', sans-serif;
-    --font-body: 'Inter', sans-serif;
-    --font-mono: 'DM Mono', monospace;
+    --bg:#0D0D0F; --surface:#16161A; --s2:#1E1E24; --s3:#26262E;
+    --border:rgba(255,255,255,0.08); --border2:rgba(255,255,255,0.14);
+    --text:#F0EFE8; --muted:#7A7A88;
+    --accent:#6C5CE7; --accent2:#A29BFE;
+    --green:#00B894;
+    --fb:'Inter',sans-serif; --fh:'Syne',sans-serif; --fm:'DM Mono',monospace;
   }
-  html, body { font-family: var(--font-body); background: var(--bg); color: var(--text); min-height: 100vh; }
+  html,body { font-family:var(--fb); background:var(--bg); color:var(--text); min-height:100vh; }
 
   /* ── Topbar ── */
-  .topbar {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 0 2rem; height: 52px;
-    border-bottom: 1px solid var(--border); background: var(--surface);
-    position: sticky; top: 0; z-index: 20;
-  }
-  .logo { font-family: var(--font-heading); font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
-  .logo-icon { width: 24px; height: 24px; background: var(--accent); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 12px; }
-  .logo span { color: var(--accent2); }
-
-  .topbar-right { display: flex; align-items: center; gap: 8px; }
-  .filter-btn {
-    padding: 5px 14px; border-radius: 7px; border: 1px solid var(--border2);
-    background: var(--surface2); color: var(--muted); font-size: 12px;
-    font-family: var(--font-body); cursor: pointer; transition: all 0.15s; font-weight: 500;
-  }
-  .filter-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
-  .filter-btn:hover:not(.active) { background: var(--surface3); color: var(--text); }
-  .export-btn {
-    padding: 5px 14px; border-radius: 7px; border: 1px solid var(--border2);
-    background: transparent; color: var(--muted); font-size: 12px;
-    font-family: var(--font-body); cursor: pointer; transition: all 0.15s;
-  }
-  .export-btn:hover { background: var(--surface2); color: var(--text); }
+  .topbar { display:flex; align-items:center; justify-content:space-between; padding:0 2rem; height:52px; border-bottom:1px solid var(--border); background:var(--surface); position:sticky; top:0; z-index:20; }
+  .logo { font-family:var(--fh); font-size:15px; font-weight:700; display:flex; align-items:center; gap:8px; }
+  .logo-icon { width:24px; height:24px; background:var(--accent); border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:12px; }
+  .logo span { color:var(--accent2); }
+  .topbar-right { display:flex; align-items:center; gap:8px; }
+  .filter-btn { padding:5px 14px; border-radius:7px; border:1px solid var(--border2); background:var(--s2); color:var(--muted); font-size:12px; font-family:var(--fb); cursor:pointer; transition:all 0.15s; font-weight:500; }
+  .filter-btn.active { background:var(--accent); color:white; border-color:var(--accent); }
+  .filter-btn:hover:not(.active) { background:var(--s3); color:var(--text); }
+  .export-btn { padding:5px 14px; border-radius:7px; border:1px solid var(--border2); background:transparent; color:var(--muted); font-size:12px; font-family:var(--fb); cursor:pointer; transition:all 0.15s; }
+  .export-btn:hover { background:var(--s2); color:var(--text); }
 
   /* ── Main ── */
-  .main { padding: 1.5rem 2rem; max-width: 1100px; margin: 0 auto; }
+  .main { padding:1.5rem 2rem; max-width:1100px; margin:0 auto; }
 
   /* ── Stats ── */
-  .stats-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 1rem; margin-bottom: 1.5rem; }
-  .stat { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1rem 1.25rem; }
-  .stat.accent { background: rgba(108,92,231,0.08); border-color: rgba(108,92,231,0.2); }
-  .stat-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 500; }
-  .stat-value { font-family: var(--font-mono); font-size: 26px; font-weight: 500; margin: 6px 0 2px; }
-  .stat.accent .stat-value { color: var(--accent2); }
-  .stat-sub { font-size: 11px; color: var(--muted); }
+  .stats-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:1rem; margin-bottom:1.5rem; }
+  .stat { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:1rem 1.25rem; }
+  .stat.accent { background:rgba(108,92,231,0.08); border-color:rgba(108,92,231,0.2); }
+  .stat-label { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:0.08em; font-weight:500; }
+  .stat-value { font-family:var(--fm); font-size:26px; font-weight:500; margin:6px 0 2px; }
+  .stat.accent .stat-value { color:var(--accent2); }
+  .stat-sub { font-size:11px; color:var(--muted); }
 
   /* ── Tabs ── */
-  .tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--border); margin-bottom: 1.25rem; }
-  .tab {
-    padding: 7px 16px; font-size: 13px; font-weight: 500; cursor: pointer;
-    border: none; background: transparent; color: var(--muted);
-    font-family: var(--font-body); border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.15s;
-  }
-  .tab.active { color: var(--text); border-bottom-color: var(--accent); }
-  .tab:hover:not(.active) { color: var(--text); }
+  .tabs { display:flex; gap:2px; border-bottom:1px solid var(--border); margin-bottom:1.25rem; }
+  .tab { padding:7px 16px; font-size:13px; font-weight:500; cursor:pointer; border:none; background:transparent; color:var(--muted); font-family:var(--fb); border-bottom:2px solid transparent; margin-bottom:-1px; transition:all 0.15s; }
+  .tab.active { color:var(--text); border-bottom-color:var(--accent); }
+  .tab:hover:not(.active) { color:var(--text); }
 
   /* ── Table ── */
-  .tbl-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 1.5rem; }
-  table { width: 100%; border-collapse: collapse; }
-  th { text-align: left; padding: 10px 1.25rem; font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 500; border-bottom: 1px solid var(--border); background: var(--surface2); }
-  td { padding: 11px 1.25rem; font-size: 13px; border-bottom: 1px solid var(--border); vertical-align: middle; }
-  tr:last-child td { border-bottom: none; }
-  tr:hover td { background: var(--surface2); }
+  .tbl-wrap { background:var(--surface); border:1px solid var(--border); border-radius:12px; overflow:hidden; margin-bottom:1.5rem; }
+  table { width:100%; border-collapse:collapse; }
+  th { text-align:left; padding:10px 1.25rem; font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:0.08em; font-weight:500; border-bottom:1px solid var(--border); background:var(--s2); }
+  td { padding:11px 1.25rem; font-size:13px; border-bottom:1px solid var(--border); vertical-align:middle; }
+  tr:last-child td { border-bottom:none; }
+  tr:hover td { background:var(--s2); }
 
-  .tdm { display: flex; align-items: center; gap: 8px; }
-  .avatar { width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; color: white; flex-shrink: 0; }
-  .dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
-  .time-mono { font-family: var(--font-mono); font-size: 13px; color: var(--accent2); font-weight: 500; }
-  .muted-cell { color: var(--muted); font-size: 12px; }
+  .tdm { display:flex; align-items:center; gap:8px; }
+  .avatar { width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:600; color:white; flex-shrink:0; }
+  .dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+  .time-mono { font-family:var(--fm); font-size:13px; color:var(--accent2); font-weight:500; }
+  .muted-cell { color:var(--muted); font-size:12px; }
+  .progress-bar { height:3px; background:var(--s3); border-radius:3px; overflow:hidden; width:72px; flex-shrink:0; }
+  .progress-fill { height:100%; border-radius:3px; background:var(--accent); transition:width 0.4s; }
 
   /* ── Bars ── */
-  .bar-wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 1.25rem; }
-  .bar-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; }
-  .bar-title { font-family: var(--font-heading); font-size: 14px; font-weight: 600; margin-bottom: 1rem; }
-  .bar-item { margin-bottom: 10px; }
-  .bar-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 5px; }
-  .bar-name { font-size: 12px; font-weight: 500; display: flex; align-items: center; gap: 6px; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .bar-time { font-family: var(--font-mono); font-size: 11px; color: var(--accent2); }
-  .bar-bg { height: 5px; background: var(--surface3); border-radius: 5px; overflow: hidden; }
-  .bar-fill { height: 100%; border-radius: 5px; transition: width 0.5s ease; }
+  .bar-wrap { display:grid; grid-template-columns:1fr 1fr; gap:1.25rem; margin-bottom:1.25rem; }
+  .bar-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:1.25rem; }
+  .bar-title { font-family:var(--fh); font-size:14px; font-weight:600; margin-bottom:1rem; }
+  .bar-item { margin-bottom:10px; }
+  .bar-row { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:5px; }
+  .bar-name { font-size:12px; font-weight:500; display:flex; align-items:center; gap:6px; max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .bar-time { font-family:var(--fm); font-size:11px; color:var(--accent2); }
+  .bar-bg { height:5px; background:var(--s3); border-radius:5px; overflow:hidden; }
+  .bar-fill { height:100%; border-radius:5px; transition:width 0.5s ease; }
 
-  .progress-bar { height: 3px; background: var(--surface3); border-radius: 3px; overflow: hidden; width: 72px; flex-shrink: 0; }
-  .progress-fill { height: 100%; border-radius: 3px; background: var(--accent); transition: width 0.4s; }
+  /* ── Log filtry ── */
+  .log-filters {
+    display:grid;
+    grid-template-columns: 1fr 1fr 1fr auto auto;
+    gap:8px;
+    align-items:center;
+    padding:14px 1.25rem;
+    background:var(--s2);
+    border-bottom:1px solid var(--border);
+  }
+  .lf-input {
+    font-family:var(--fb); font-size:12px;
+    background:var(--bg); border:1px solid var(--border2);
+    border-radius:7px; padding:7px 10px; color:var(--text); outline:none;
+    width:100%;
+  }
+  .lf-input:focus { border-color:var(--accent); }
+  .lf-input::placeholder { color:var(--muted); }
+  select.lf-input { cursor:pointer; }
+  .lf-date-row { display:flex; gap:6px; align-items:center; }
+  .lf-date { font-family:var(--fb); font-size:12px; background:var(--bg); border:1px solid var(--border2); border-radius:7px; padding:7px 8px; color:var(--text); outline:none; width:100%; }
+  .lf-date:focus { border-color:var(--accent); }
+  .lf-date-sep { color:var(--muted); font-size:11px; flex-shrink:0; }
+  .btn-clear-filter {
+    padding:7px 12px; border-radius:7px; border:1px solid var(--border2);
+    background:transparent; color:var(--muted); font-size:12px; font-family:var(--fb);
+    cursor:pointer; white-space:nowrap; transition:all 0.15s;
+  }
+  .btn-clear-filter:hover { background:var(--s3); color:var(--text); }
 
-  /* ── Loading / Empty ── */
-  .page-loading {
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    min-height: 60vh; gap: 16px;
+  /* Aktivní filtry – štítky */
+  .active-filters {
+    display:flex; flex-wrap:wrap; gap:6px;
+    padding:8px 1.25rem;
+    background:var(--s2);
+    border-bottom:1px solid var(--border);
+    min-height:0;
   }
-  .spinner {
-    width: 32px; height: 32px; border: 2px solid var(--border2);
-    border-top-color: var(--accent); border-radius: 50%;
-    animation: spin 0.8s linear infinite;
+  .active-filters:empty { display:none; }
+  .filter-tag {
+    display:inline-flex; align-items:center; gap:5px;
+    font-size:11px; font-weight:500; padding:3px 8px;
+    border-radius:6px; background:rgba(108,92,231,0.15);
+    color:var(--accent2); border:1px solid rgba(108,92,231,0.25);
+    cursor:pointer; transition:background 0.15s;
   }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .loading-text { font-size: 13px; color: var(--muted); }
+  .filter-tag:hover { background:rgba(108,92,231,0.25); }
+  .filter-tag-x { font-size:13px; line-height:1; }
 
-  .empty { padding: 2rem; text-align: center; color: var(--muted); font-size: 13px; }
-  .error-box {
-    background: rgba(214,48,49,0.08); border: 1px solid rgba(214,48,49,0.2);
-    border-radius: 10px; padding: 1rem 1.25rem; color: #FF7675; font-size: 13px;
-    margin-bottom: 1rem;
+  /* Výsledky filtrace */
+  .log-result-count {
+    padding:6px 1.25rem; font-size:11px; color:var(--muted);
+    background:var(--s2); border-bottom:1px solid var(--border);
   }
+
+  /* ── Loading ── */
+  .page-loading { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:60vh; gap:16px; }
+  .spinner { width:32px; height:32px; border:2px solid var(--border2); border-top-color:var(--accent); border-radius:50%; animation:spin 0.8s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .loading-text { font-size:13px; color:var(--muted); }
+  .empty { padding:2rem; text-align:center; color:var(--muted); font-size:13px; }
+  .error-box { background:rgba(214,48,49,0.08); border:1px solid rgba(214,48,49,0.2); border-radius:10px; padding:1rem 1.25rem; color:#FF7675; font-size:13px; margin-bottom:1rem; }
 </style>
 </head>
 <body>
@@ -121,29 +143,27 @@
 <div class="topbar">
   <div class="logo">
     <div class="logo-icon">⏱</div>
-    Prime<span>Time</span>
-    <span style="font-size:12px;color:var(--muted);font-family:var(--font-body);font-weight:400;margin-left:4px">Report</span>
+    Time<span>Track</span>
+    <span style="font-size:12px;color:var(--muted);font-family:var(--fb);font-weight:400;margin-left:4px">Report</span>
   </div>
   <div class="topbar-right">
-    <button class="filter-btn active" onclick="setFilter('week',this)">Tento týden</button>
-    <button class="filter-btn" onclick="setFilter('month',this)">Tento měsíc</button>
-    <button class="filter-btn" onclick="setFilter('all',this)">Vše</button>
+    <button class="filter-btn active" onclick="setPeriod('week',this)">Tento týden</button>
+    <button class="filter-btn" onclick="setPeriod('month',this)">Tento měsíc</button>
+    <button class="filter-btn" onclick="setPeriod('all',this)">Vše</button>
     <button class="export-btn" onclick="exportCSV()">⬇ CSV</button>
   </div>
 </div>
 
 <div class="main">
-
-  <!-- Spinner při načítání -->
   <div id="page-loading" class="page-loading">
     <div class="spinner"></div>
     <div class="loading-text">Načítám záznamy…</div>
   </div>
 
   <div id="content" style="display:none">
-
     <div id="error-box" class="error-box" style="display:none"></div>
 
+    <!-- Stats -->
     <div class="stats-grid">
       <div class="stat accent"><div class="stat-label">Celkový čas</div><div class="stat-value" id="s-total">—</div><div class="stat-sub" id="s-period">—</div></div>
       <div class="stat"><div class="stat-label">Záznamy</div><div class="stat-value" id="s-entries">—</div><div class="stat-sub">celkem</div></div>
@@ -151,12 +171,14 @@
       <div class="stat"><div class="stat-label">Nejaktivnější</div><div class="stat-value" id="s-top" style="font-size:18px;margin-top:8px">—</div><div class="stat-sub" id="s-top-time">—</div></div>
     </div>
 
+    <!-- Tabs -->
     <div class="tabs">
       <button class="tab active" onclick="setTab('members',this)">Podle členů</button>
       <button class="tab" onclick="setTab('cards',this)">Podle karet</button>
       <button class="tab" onclick="setTab('log',this)">Detailní log</button>
     </div>
 
+    <!-- Tab: Members -->
     <div id="tab-members">
       <div class="bar-wrap">
         <div class="bar-card"><div class="bar-title">Čas podle členů</div><div id="member-bars"></div></div>
@@ -168,6 +190,7 @@
       </div>
     </div>
 
+    <!-- Tab: Cards -->
     <div id="tab-cards" style="display:none">
       <div class="tbl-wrap">
         <table><thead><tr><th>Karta</th><th>Pracovali</th><th>Celkem</th><th>Průběh</th></tr></thead>
@@ -175,256 +198,332 @@
       </div>
     </div>
 
+    <!-- Tab: Log s filtry -->
     <div id="tab-log" style="display:none">
       <div class="tbl-wrap">
-        <table><thead><tr><th>Člen</th><th>Karta</th><th>Popis</th><th>Čas</th><th>Datum</th></tr></thead>
-        <tbody id="tb-log"></tbody></table>
+        <!-- Filtrovací lišta -->
+        <div class="log-filters">
+          <!-- Člen -->
+          <select class="lf-input" id="f-member" onchange="applyLogFilters()">
+            <option value="">Všichni členové</option>
+          </select>
+          <!-- Karta -->
+          <select class="lf-input" id="f-card" onchange="applyLogFilters()">
+            <option value="">Všechny karty</option>
+          </select>
+          <!-- Popis (fulltext) -->
+          <input type="text" class="lf-input" id="f-desc" placeholder="Hledat v popisu…" oninput="applyLogFilters()">
+          <!-- Datum od–do -->
+          <div class="lf-date-row">
+            <input type="date" class="lf-date" id="f-date-from" onchange="applyLogFilters()" title="Od">
+            <span class="lf-date-sep">–</span>
+            <input type="date" class="lf-date" id="f-date-to" onchange="applyLogFilters()" title="Do">
+          </div>
+          <!-- Reset -->
+          <button class="btn-clear-filter" onclick="clearLogFilters()">✕ Smazat</button>
+        </div>
+
+        <!-- Aktivní filtry jako štítky -->
+        <div class="active-filters" id="active-filters"></div>
+
+        <!-- Počet výsledků -->
+        <div class="log-result-count" id="log-result-count"></div>
+
+        <table>
+          <thead>
+            <tr>
+              <th onclick="sortLog('memberName')" style="cursor:pointer">Člen <span id="sort-memberName"></span></th>
+              <th onclick="sortLog('cardName')"   style="cursor:pointer">Karta <span id="sort-cardName"></span></th>
+              <th>Popis</th>
+              <th onclick="sortLog('mins')"  style="cursor:pointer">Čas <span id="sort-mins"></span></th>
+              <th onclick="sortLog('date')"  style="cursor:pointer">Datum <span id="sort-date"></span></th>
+            </tr>
+          </thead>
+          <tbody id="tb-log"></tbody>
+        </table>
       </div>
     </div>
-
   </div>
 </div>
 
 <script>
-// ── Detekce prostředí ─────────────────────────────────────
+// ── Prostředí ────────────────────────────────────────────
 const IN_TRELLO = (() => {
   try { return window.self !== window.top && typeof TrelloPowerUp !== 'undefined'; }
   catch(e) { return false; }
 })();
 
-// ── Mock data (mimo Trello) ───────────────────────────────
 const MOCK_LOGS = [
-  { id:'l1', memberId:'m1', memberName:'Jakub Novák',   cardId:'c1', cardName:'Redesign homepage',    mins:90,  desc:'Wireframy', date:'2025-06-17' },
-  { id:'l2', memberId:'m1', memberName:'Jakub Novák',   cardId:'c1', cardName:'Redesign homepage',    mins:135, desc:'Hero sekce', date:'2025-06-17' },
-  { id:'l3', memberId:'m2', memberName:'Tereza Dvořák', cardId:'c2', cardName:'API integrace Stripe', mins:180, desc:'OAuth flow', date:'2025-06-16' },
-  { id:'l4', memberId:'m3', memberName:'Marek Svoboda', cardId:'c3', cardName:'Bug #342 login',       mins:75,  desc:'Debug',     date:'2025-06-16' },
-  { id:'l5', memberId:'m1', memberName:'Jakub Novák',   cardId:'c4', cardName:'CI/CD pipeline',       mins:60,  desc:'Docker',    date:'2025-06-15' },
-  { id:'l6', memberId:'m2', memberName:'Tereza Dvořák', cardId:'c1', cardName:'Redesign homepage',    mins:150, desc:'Mobile',    date:'2025-06-15' },
+  { id:'l1', memberId:'m1', memberName:'Jakub Novák',   cardId:'c1', cardName:'Redesign homepage',    mins:90,  desc:'Wireframy navigace', date:'2026-03-24' },
+  { id:'l2', memberId:'m1', memberName:'Jakub Novák',   cardId:'c1', cardName:'Redesign homepage',    mins:135, desc:'Hero sekce',          date:'2026-03-24' },
+  { id:'l3', memberId:'m2', memberName:'Tereza Dvořák', cardId:'c2', cardName:'API integrace Stripe', mins:180, desc:'OAuth flow',           date:'2026-03-25' },
+  { id:'l4', memberId:'m3', memberName:'Marek Svoboda', cardId:'c3', cardName:'Bug #342 login',       mins:75,  desc:'Debug session token',  date:'2026-03-25' },
+  { id:'l5', memberId:'m1', memberName:'Jakub Novák',   cardId:'c4', cardName:'CI/CD pipeline',       mins:60,  desc:'Docker konfigurace',   date:'2026-03-26' },
+  { id:'l6', memberId:'m2', memberName:'Tereza Dvořák', cardId:'c1', cardName:'Redesign homepage',    mins:150, desc:'Mobile breakpoints',   date:'2026-03-26' },
+  { id:'l7', memberId:'m3', memberName:'Marek Svoboda', cardId:'c2', cardName:'API integrace Stripe', mins:90,  desc:'Webhook testing',      date:'2026-03-27' },
+  { id:'l8', memberId:'m4', memberName:'Lucie Krejčí',  cardId:'c5', cardName:'Teambuilding',         mins:120, desc:'Booking ubytování',   date:'2026-03-27' },
+  { id:'l9', memberId:'m1', memberName:'Jakub Novák',   cardId:'c5', cardName:'Teambuilding',         mins:45,  desc:'Email koordinace',     date:'2026-03-28' },
 ];
 
-// ── Trello API wrapper ────────────────────────────────────
 let _t = null;
-if (IN_TRELLO) {
-  // V modal kontextu musíme použít TrelloPowerUp.iframe()
-  _t = TrelloPowerUp.iframe();
-}
+if (IN_TRELLO) _t = TrelloPowerUp.iframe();
 
 async function fetchLogs() {
   if (!IN_TRELLO) return MOCK_LOGS;
-
-  // t.get() v modal kontextu funguje stejně jako v popup kontextu
-  const logs = await _t.get('board', 'shared', 'tt-logs');
-  return logs || [];
+  return (await _t.get('board','shared','tt-logs')) || [];
 }
 
-async function fetchCards() {
-  if (!IN_TRELLO) {
-    // Mock karty odvozené z logů
-    return [...new Map(MOCK_LOGS.map(l => [l.cardId, {id:l.cardId, name:l.cardName}])).values()];
-  }
+// ── Helpers ──────────────────────────────────────────────
+const COLORS=['#6C5CE7','#00B894','#E17055','#0984E3','#FDCB6E','#A29BFE','#D63031','#00CEC9'];
+function memberColor(id){let h=0;for(const c of String(id))h=(h*31+c.charCodeAt(0))&0xffffffff;return COLORS[Math.abs(h)%COLORS.length];}
+function initials(n){const p=(n||'?').trim().split(' ');return(p[0][0]+(p[1]?.[0]||'')).toUpperCase();}
+function fmtHM(mins){const h=Math.floor(mins/60),m=mins%60;return h>0?`${h}h ${m}m`:`${m}m`;}
 
-  // Trello board cards - načteme přes board() ne přes cards()
-  // (board() je dostupné v modal i popup kontextu)
-  try {
-    const board = await _t.board('id');
-    // Unikátní cardIds z logů - mapujeme na názvy
-    return []; // Karty mapujeme přímo z logů (viz cardNames níže)
-  } catch(e) {
-    return [];
-  }
-}
-
-// ── Helpers ───────────────────────────────────────────────
-const COLORS = ['#6C5CE7','#00B894','#E17055','#0984E3','#FDCB6E','#A29BFE','#D63031','#00CEC9'];
-function memberColor(id) {
-  let h=0; for(const c of String(id)) h=(h*31+c.charCodeAt(0))&0xffffffff;
-  return COLORS[Math.abs(h)%COLORS.length];
-}
-function initials(name) {
-  const p=(name||'?').trim().split(' ');
-  return (p[0][0]+(p[1]?.[0]||'')).toUpperCase();
-}
-function fmtHM(mins) {
-  const h=Math.floor(mins/60),m=mins%60;
-  return h>0?`${h}h ${m}m`:`${m}m`;
-}
-
+// ── Stav ─────────────────────────────────────────────────
 let allLogs = [];
-// cardNames: { cardId → cardName } – ukládáme při logování v tracker-popup
-// Protože Trello cards API nevrací karty v modal kontextu spolehlivě,
-// uložíme název karty přímo do logu při jeho vytvoření.
 let cardNames = {};
-let currentFilter = 'week';
+let currentPeriod = 'week';
 
-function filterLogs(logs) {
-  if (currentFilter==='all') return logs;
+// Log filtry
+let logFilters = { member:'', card:'', desc:'', dateFrom:'', dateTo:'' };
+let logSort    = { key:'date', dir:'desc' };
+
+// ── Period filter ─────────────────────────────────────────
+function periodFilter(logs) {
+  if (currentPeriod==='all') return logs;
   const now=new Date();
   return logs.filter(l=>{
     const d=new Date(l.date);
-    if (currentFilter==='week') {
-      const w=new Date(now); w.setDate(now.getDate()-7);
-      return d>=w;
-    }
+    if (currentPeriod==='week'){const w=new Date(now);w.setDate(now.getDate()-7);return d>=w;}
     return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear();
   });
 }
 
-// ── Init ──────────────────────────────────────────────────
+// ── Init ─────────────────────────────────────────────────
 async function init() {
   try {
     allLogs = await fetchLogs();
-
-    // Sestavíme mapu názvů karet z logů (log obsahuje cardName pokud byl uložen)
-    allLogs.forEach(l => {
-      if (l.cardName) cardNames[l.cardId] = l.cardName;
-    });
-
-    document.getElementById('page-loading').style.display = 'none';
-    document.getElementById('content').style.display = 'block';
-    render();
+    allLogs.forEach(l=>{ if(l.cardName) cardNames[l.cardId]=l.cardName; });
+    document.getElementById('page-loading').style.display='none';
+    document.getElementById('content').style.display='block';
+    renderAll();
   } catch(err) {
-    document.getElementById('page-loading').style.display = 'none';
-    document.getElementById('content').style.display = 'block';
-    const eb = document.getElementById('error-box');
-    eb.style.display = 'block';
-    eb.textContent = `Chyba při načítání dat: ${err.message}`;
+    document.getElementById('page-loading').style.display='none';
+    document.getElementById('content').style.display='block';
+    const eb=document.getElementById('error-box');
+    eb.style.display='block';
+    eb.textContent=`Chyba: ${err.message}`;
   }
 }
 
-// ── Render ────────────────────────────────────────────────
-function render() {
-  const logs = filterLogs(allLogs);
+// ── Render všechno ────────────────────────────────────────
+function renderAll() {
+  const logs = periodFilter(allLogs);
+  renderStats(logs);
+  renderMembersTab(logs);
+  renderCardsTab(logs);
+  populateLogFilterDropdowns(logs);
+  renderLogTab();
+}
 
-  // Stats
-  const totalMins = logs.reduce((s,l)=>s+l.mins,0);
-  document.getElementById('s-total').textContent = fmtHM(totalMins);
-  document.getElementById('s-entries').textContent = logs.length;
-  document.getElementById('s-period').textContent =
-    currentFilter==='week'?'tento týden':currentFilter==='month'?'tento měsíc':'celkem';
+// ── Stats ─────────────────────────────────────────────────
+function renderStats(logs) {
+  const totalMins=logs.reduce((s,l)=>s+l.mins,0);
+  document.getElementById('s-total').textContent=fmtHM(totalMins);
+  document.getElementById('s-entries').textContent=logs.length;
+  document.getElementById('s-period').textContent=
+    currentPeriod==='week'?'tento týden':currentPeriod==='month'?'tento měsíc':'celkem';
 
   const memberIds=[...new Set(logs.map(l=>l.memberId))];
   document.getElementById('s-members').textContent=memberIds.length;
 
-  // Nejaktivnější člen
-  const memberMins={}, memberNames={};
-  logs.forEach(l=>{
-    memberMins[l.memberId]=(memberMins[l.memberId]||0)+l.mins;
-    memberNames[l.memberId]=l.memberName;
-  });
-
-  const topEntry=Object.entries(memberMins).sort((a,b)=>b[1]-a[1])[0];
-  if(topEntry){
-    const n=memberNames[topEntry[0]]||'?';
-    const short=n.split(' ').map((p,i)=>i===0?p:p[0]+'.').join(' ');
-    document.getElementById('s-top').textContent=short;
-    document.getElementById('s-top-time').textContent=fmtHM(topEntry[1]);
-  } else {
+  const mm={},mn={};
+  logs.forEach(l=>{mm[l.memberId]=(mm[l.memberId]||0)+l.mins;mn[l.memberId]=l.memberName;});
+  const top=Object.entries(mm).sort((a,b)=>b[1]-a[1])[0];
+  if(top){
+    const n=mn[top[0]]||'?';
+    document.getElementById('s-top').textContent=n.split(' ').map((p,i)=>i===0?p:p[0]+'.').join(' ');
+    document.getElementById('s-top-time').textContent=fmtHM(top[1]);
+  }else{
     document.getElementById('s-top').textContent='—';
     document.getElementById('s-top-time').textContent='žádná data';
   }
-
-  const maxMemberMins=Math.max(...Object.values(memberMins),1);
-
-  // Member bars
-  document.getElementById('member-bars').innerHTML=
-    Object.entries(memberMins).sort((a,b)=>b[1]-a[1]).map(([id,mins])=>{
-      const pct=Math.round((mins/maxMemberMins)*100);
-      const color=memberColor(id);
-      return `<div class="bar-item">
-        <div class="bar-row">
-          <div class="bar-name">
-            <div class="avatar" style="background:${color};width:18px;height:18px;font-size:8px">${initials(memberNames[id])}</div>
-            ${memberNames[id]||id}
-          </div>
-          <div class="bar-time">${fmtHM(mins)}</div>
-        </div>
-        <div class="bar-bg"><div class="bar-fill" style="width:${pct}%;background:${color}"></div></div>
-      </div>`;
-    }).join('')||'<div class="empty">Žádná data</div>';
-
-  // Card mins
-  const cMins={};
-  logs.forEach(l=>{ cMins[l.cardId]=(cMins[l.cardId]||0)+l.mins; });
-  const maxCardMins=Math.max(...Object.values(cMins),1);
-
-  // Card bars (top 8)
-  document.getElementById('card-bars').innerHTML=
-    Object.entries(cMins).sort((a,b)=>b[1]-a[1]).slice(0,8).map(([id,mins])=>{
-      const pct=Math.round((mins/maxCardMins)*100);
-      const name=cardNames[id]||id;
-      return `<div class="bar-item">
-        <div class="bar-row">
-          <div class="bar-name" title="${name}">${name}</div>
-          <div class="bar-time">${fmtHM(mins)}</div>
-        </div>
-        <div class="bar-bg"><div class="bar-fill" style="width:${pct}%;background:var(--accent)"></div></div>
-      </div>`;
-    }).join('')||'<div class="empty">Žádná data</div>';
-
-  // Members table
-  document.getElementById('tb-members').innerHTML=
-    Object.entries(memberMins).sort((a,b)=>b[1]-a[1]).map(([id,mins])=>{
-      const entries=logs.filter(l=>l.memberId===id).length;
-      const pct=totalMins>0?Math.round((mins/totalMins)*100):0;
-      const color=memberColor(id);
-      return `<tr>
-        <td><div class="tdm">
-          <div class="avatar" style="background:${color}">${initials(memberNames[id])}</div>
-          <span style="font-weight:500">${memberNames[id]||id}</span>
-        </div></td>
-        <td class="muted-cell">${entries}</td>
-        <td class="time-mono">${fmtHM(mins)}</td>
-        <td><div style="display:flex;align-items:center;gap:8px">
-          <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
-          <span class="muted-cell">${pct}%</span>
-        </div></td>
-      </tr>`;
-    }).join('')||'<tr><td colspan="4" class="empty">Žádná data</td></tr>';
-
-  // Cards table
-  const cardWorkers={};
-  logs.forEach(l=>{ (cardWorkers[l.cardId]=cardWorkers[l.cardId]||new Set()).add(l.memberId+'|'+l.memberName); });
-
-  document.getElementById('tb-cards').innerHTML=
-    Object.entries(cMins).sort((a,b)=>b[1]-a[1]).map(([id,mins])=>{
-      const workers=[...cardWorkers[id]||[]].map(w=>{
-        const [mid,mname]=w.split('|');
-        const c=memberColor(mid);
-        return `<div class="avatar" style="background:${c};width:22px;height:22px;font-size:9px;margin-right:-4px">${initials(mname)}</div>`;
-      }).join('');
-      const pct=Math.round((mins/maxCardMins)*100);
-      const name=cardNames[id]||id;
-      return `<tr>
-        <td><div class="tdm"><div class="dot" style="background:var(--accent)"></div><span style="font-weight:500">${name}</span></div></td>
-        <td><div style="display:flex">${workers}</div></td>
-        <td class="time-mono">${fmtHM(mins)}</td>
-        <td><div class="progress-bar" style="width:90px"><div class="progress-fill" style="width:${pct}%"></div></div></td>
-      </tr>`;
-    }).join('')||'<tr><td colspan="4" class="empty">Žádná data</td></tr>';
-
-  // Log table
-  document.getElementById('tb-log').innerHTML=
-    [...logs].reverse().map(l=>{
-      const color=memberColor(l.memberId);
-      const name=cardNames[l.cardId]||l.cardId;
-      return `<tr>
-        <td><div class="tdm">
-          <div class="avatar" style="background:${color}">${initials(l.memberName)}</div>
-          <span>${l.memberName}</span>
-        </div></td>
-        <td class="muted-cell" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${name}</td>
-        <td class="muted-cell">${l.desc||'—'}</td>
-        <td class="time-mono">${fmtHM(l.mins)}</td>
-        <td class="muted-cell">${l.date}</td>
-      </tr>`;
-    }).join('')||'<tr><td colspan="5" class="empty">Žádné záznamy</td></tr>';
 }
 
-function setFilter(f,btn) {
-  currentFilter=f;
+// ── Members tab ───────────────────────────────────────────
+function renderMembersTab(logs) {
+  const mm={},mn={};
+  logs.forEach(l=>{mm[l.memberId]=(mm[l.memberId]||0)+l.mins;mn[l.memberId]=l.memberName;});
+  const totalMins=logs.reduce((s,l)=>s+l.mins,0);
+  const maxMM=Math.max(...Object.values(mm),1);
+
+  document.getElementById('member-bars').innerHTML=
+    Object.entries(mm).sort((a,b)=>b[1]-a[1]).map(([id,mins])=>{
+      const pct=Math.round((mins/maxMM)*100),c=memberColor(id);
+      return `<div class="bar-item"><div class="bar-row">
+        <div class="bar-name"><div class="avatar" style="background:${c};width:18px;height:18px;font-size:8px">${initials(mn[id])}</div>${mn[id]||id}</div>
+        <div class="bar-time">${fmtHM(mins)}</div></div>
+        <div class="bar-bg"><div class="bar-fill" style="width:${pct}%;background:${c}"></div></div></div>`;
+    }).join('')||'<div class="empty">Žádná data</div>';
+
+  const cm={};
+  logs.forEach(l=>{ cm[l.cardId]=(cm[l.cardId]||0)+l.mins; });
+  const maxCM=Math.max(...Object.values(cm),1);
+  document.getElementById('card-bars').innerHTML=
+    Object.entries(cm).sort((a,b)=>b[1]-a[1]).slice(0,8).map(([id,mins])=>{
+      const pct=Math.round((mins/maxCM)*100),name=cardNames[id]||id;
+      return `<div class="bar-item"><div class="bar-row">
+        <div class="bar-name" title="${name}">${name}</div>
+        <div class="bar-time">${fmtHM(mins)}</div></div>
+        <div class="bar-bg"><div class="bar-fill" style="width:${pct}%;background:var(--accent)"></div></div></div>`;
+    }).join('')||'<div class="empty">Žádná data</div>';
+
+  document.getElementById('tb-members').innerHTML=
+    Object.entries(mm).sort((a,b)=>b[1]-a[1]).map(([id,mins])=>{
+      const entries=logs.filter(l=>l.memberId===id).length;
+      const pct=totalMins>0?Math.round((mins/totalMins)*100):0;
+      const c=memberColor(id);
+      return `<tr>
+        <td><div class="tdm"><div class="avatar" style="background:${c}">${initials(mn[id])}</div><span style="font-weight:500">${mn[id]||id}</span></div></td>
+        <td class="muted-cell">${entries}</td><td class="time-mono">${fmtHM(mins)}</td>
+        <td><div style="display:flex;align-items:center;gap:8px">
+          <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+          <span class="muted-cell">${pct}%</span></div></td></tr>`;
+    }).join('')||'<tr><td colspan="4" class="empty">Žádná data</td></tr>';
+}
+
+// ── Cards tab ─────────────────────────────────────────────
+function renderCardsTab(logs) {
+  const cm={},cw={};
+  logs.forEach(l=>{
+    cm[l.cardId]=(cm[l.cardId]||0)+l.mins;
+    (cw[l.cardId]=cw[l.cardId]||new Set()).add(l.memberId+'|'+l.memberName);
+  });
+  const maxCM=Math.max(...Object.values(cm),1);
+  document.getElementById('tb-cards').innerHTML=
+    Object.entries(cm).sort((a,b)=>b[1]-a[1]).map(([id,mins])=>{
+      const avatars=[...cw[id]||[]].map(w=>{const[mid,mn]=w.split('|');const c=memberColor(mid);return`<div class="avatar" style="background:${c};width:22px;height:22px;font-size:9px;margin-right:-4px">${initials(mn)}</div>`;}).join('');
+      const pct=Math.round((mins/maxCM)*100),name=cardNames[id]||id;
+      return `<tr>
+        <td><div class="tdm"><div class="dot" style="background:var(--accent)"></div><span style="font-weight:500">${name}</span></div></td>
+        <td><div style="display:flex">${avatars}</div></td>
+        <td class="time-mono">${fmtHM(mins)}</td>
+        <td><div class="progress-bar" style="width:90px"><div class="progress-fill" style="width:${pct}%"></div></div></td></tr>`;
+    }).join('')||'<tr><td colspan="4" class="empty">Žádná data</td></tr>';
+}
+
+// ── Log tab – plní dropdown filtry ────────────────────────
+function populateLogFilterDropdowns(logs) {
+  // Členi
+  const members=[...new Map(logs.map(l=>[l.memberId,l.memberName])).entries()].sort((a,b)=>a[1].localeCompare(b[1]));
+  const mSel=document.getElementById('f-member');
+  const mVal=mSel.value;
+  mSel.innerHTML='<option value="">Všichni členové</option>'+members.map(([id,n])=>`<option value="${id}">${n}</option>`).join('');
+  mSel.value=mVal;
+
+  // Karty
+  const cards=[...new Map(logs.map(l=>[l.cardId,cardNames[l.cardId]||l.cardId])).entries()].sort((a,b)=>a[1].localeCompare(b[1]));
+  const cSel=document.getElementById('f-card');
+  const cVal=cSel.value;
+  cSel.innerHTML='<option value="">Všechny karty</option>'+cards.map(([id,n])=>`<option value="${id}">${n}</option>`).join('');
+  cSel.value=cVal;
+}
+
+// ── Log tab – render s filtry + sort ─────────────────────
+function applyLogFilters() {
+  logFilters.member   = document.getElementById('f-member').value;
+  logFilters.card     = document.getElementById('f-card').value;
+  logFilters.desc     = document.getElementById('f-desc').value.trim().toLowerCase();
+  logFilters.dateFrom = document.getElementById('f-date-from').value;
+  logFilters.dateTo   = document.getElementById('f-date-to').value;
+  renderLogTab();
+}
+
+function clearLogFilters() {
+  logFilters={member:'',card:'',desc:'',dateFrom:'',dateTo:''};
+  document.getElementById('f-member').value='';
+  document.getElementById('f-card').value='';
+  document.getElementById('f-desc').value='';
+  document.getElementById('f-date-from').value='';
+  document.getElementById('f-date-to').value='';
+  renderLogTab();
+}
+
+function sortLog(key) {
+  if(logSort.key===key) logSort.dir=logSort.dir==='asc'?'desc':'asc';
+  else { logSort.key=key; logSort.dir=key==='date'?'desc':'asc'; }
+  renderLogTab();
+}
+
+function renderLogTab() {
+  let logs = periodFilter(allLogs);
+
+  // Filtry
+  if(logFilters.member)   logs=logs.filter(l=>l.memberId===logFilters.member);
+  if(logFilters.card)     logs=logs.filter(l=>l.cardId===logFilters.card);
+  if(logFilters.desc)     logs=logs.filter(l=>(l.desc||'').toLowerCase().includes(logFilters.desc));
+  if(logFilters.dateFrom) logs=logs.filter(l=>l.date>=logFilters.dateFrom);
+  if(logFilters.dateTo)   logs=logs.filter(l=>l.date<=logFilters.dateTo);
+
+  // Sort
+  logs=[...logs].sort((a,b)=>{
+    let va=a[logSort.key]||'', vb=b[logSort.key]||'';
+    if(logSort.key==='mins'){va=+va;vb=+vb;}
+    const r=va<vb?-1:va>vb?1:0;
+    return logSort.dir==='asc'?r:-r;
+  });
+
+  // Sort indikátory
+  ['memberName','cardName','mins','date'].forEach(k=>{
+    const el=document.getElementById(`sort-${k}`);
+    if(el) el.textContent=logSort.key===k?(logSort.dir==='asc'?' ↑':' ↓'):'';
+  });
+
+  // Aktivní filtry štítky
+  const tags=[];
+  if(logFilters.member){const opt=[...document.getElementById('f-member').options].find(o=>o.value===logFilters.member);tags.push({label:`Člen: ${opt?.text||logFilters.member}`,key:'member'});}
+  if(logFilters.card){const opt=[...document.getElementById('f-card').options].find(o=>o.value===logFilters.card);tags.push({label:`Karta: ${opt?.text||logFilters.card}`,key:'card'});}
+  if(logFilters.desc)tags.push({label:`Popis: "${logFilters.desc}"`,key:'desc'});
+  if(logFilters.dateFrom)tags.push({label:`Od: ${logFilters.dateFrom}`,key:'dateFrom'});
+  if(logFilters.dateTo)tags.push({label:`Do: ${logFilters.dateTo}`,key:'dateTo'});
+
+  document.getElementById('active-filters').innerHTML=tags.map(t=>
+    `<span class="filter-tag" onclick="clearOneFilter('${t.key}')">${t.label} <span class="filter-tag-x">×</span></span>`
+  ).join('');
+
+  // Počet výsledků
+  const all=periodFilter(allLogs).length;
+  document.getElementById('log-result-count').textContent=
+    tags.length>0 ? `${logs.length} z ${all} záznamů` : `${logs.length} záznamů`;
+
+  // Tabulka
+  document.getElementById('tb-log').innerHTML=logs.map(l=>{
+    const c=memberColor(l.memberId),name=cardNames[l.cardId]||l.cardId;
+    return `<tr>
+      <td><div class="tdm"><div class="avatar" style="background:${c}">${initials(l.memberName)}</div><span>${l.memberName}</span></div></td>
+      <td class="muted-cell" style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${name}</td>
+      <td class="muted-cell">${l.desc||'—'}</td>
+      <td class="time-mono">${fmtHM(l.mins)}</td>
+      <td class="muted-cell">${l.date}</td></tr>`;
+  }).join('')||'<tr><td colspan="5" class="empty">Žádné záznamy odpovídají filtrům</td></tr>';
+}
+
+function clearOneFilter(key) {
+  logFilters[key]='';
+  if(key==='member') document.getElementById('f-member').value='';
+  if(key==='card')   document.getElementById('f-card').value='';
+  if(key==='desc')   document.getElementById('f-desc').value='';
+  if(key==='dateFrom') document.getElementById('f-date-from').value='';
+  if(key==='dateTo')   document.getElementById('f-date-to').value='';
+  renderLogTab();
+}
+
+// ── Nav ───────────────────────────────────────────────────
+function setPeriod(p,btn) {
+  currentPeriod=p;
   document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
-  render();
+  renderAll();
 }
 
 function setTab(tab,btn) {
@@ -435,14 +534,21 @@ function setTab(tab,btn) {
   });
 }
 
+// ── CSV export ────────────────────────────────────────────
 function exportCSV() {
-  const logs=filterLogs(allLogs);
+  let logs=periodFilter(allLogs);
+  if(logFilters.member)logs=logs.filter(l=>l.memberId===logFilters.member);
+  if(logFilters.card)  logs=logs.filter(l=>l.cardId===logFilters.card);
+  if(logFilters.desc)  logs=logs.filter(l=>(l.desc||'').toLowerCase().includes(logFilters.desc));
+  if(logFilters.dateFrom)logs=logs.filter(l=>l.date>=logFilters.dateFrom);
+  if(logFilters.dateTo)  logs=logs.filter(l=>l.date<=logFilters.dateTo);
+
   const rows=[['Člen','Karta','Popis','Minuty','Datum']];
   logs.forEach(l=>rows.push([l.memberName,cardNames[l.cardId]||l.cardId,l.desc||'',l.mins,l.date]));
   const csv=rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
   const a=Object.assign(document.createElement('a'),{
-    href: URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'})),
-    download: `timetrack-${new Date().toISOString().slice(0,10)}.csv`,
+    href:URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'})),
+    download:`timetrack-${new Date().toISOString().slice(0,10)}.csv`,
   });
   a.click();
 }
