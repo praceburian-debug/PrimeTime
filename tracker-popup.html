@@ -340,13 +340,6 @@ async function renderLog() {
 }
 
 init();
-  t.render(function() {
-  // Tato funkce se spustí pokaždé, když Trello překresluje UI
-  // sizeTo() zajistí, že iframe bude přesně tak vysoký, jako jeho obsah
-  return t.sizeTo('#container').catch(function() {
-    // Fallback, pokud by selektor nebyl nalezen
-  });
-});
 </script>
 </body>
 </html>

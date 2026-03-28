@@ -25,13 +25,8 @@ const ICON_CHART = 'https://cdn.jsdelivr.net/npm/lucide-static@0.441.0/icons/bar
 // ── Helpers ──────────────────────────────────────────────────
 
 async function getPermissions(t) {
-  try {
-    const perms = await t.get('board', 'shared', 'tt-permissions');
-    // Pokud perms neexistují, vrátíme prázdnou strukturu, aby .length neházel chybu
-    return perms || { admins: [], trackers: [] };
-  } catch (e) {
-    return { admins: [], trackers: [] };
-  }
+  const perms = await t.get('board', 'shared', 'tt-permissions');
+  return perms || { admins: [], trackers: [] };
 }
 
 async function getCurrentMemberId(t) {
@@ -40,23 +35,10 @@ async function getCurrentMemberId(t) {
 }
 
 async function isAdmin(t) {
-  try {
-    const perms = await getPermissions(t);
-    const member = await t.member('id');
-    const memberId = member.id;
-
-    // KLÍČOVÁ ZMĚNA: Pokud je pole adminů prázdné, 
-    // PUSTÍME TĚ DÁL, abys mohl nastavení poprvé uložit.
-    if (!perms.admins || perms.admins.length === 0) {
-      return true;
-    }
-    
-    return perms.admins.includes(memberId);
-  } catch (e) {
-    // V případě jakékoliv chyby v komunikaci s Trellem 
-    // tě raději pustíme jako admina, abychom tě nezablokovali.
-    return true; 
-  }
+  const [perms, memberId] = await Promise.all([getPermissions(t), getCurrentMemberId(t)]);
+  // První člen co Power-Up nainstaluje se stane super adminem automaticky
+  if (perms.admins.length === 0) return true;
+  return perms.admins.includes(memberId);
 }
 
 async function canTrack(t) {
@@ -151,16 +133,16 @@ TrelloPowerUp.initialize({
     const allowed = await canTrack(t);
     if (!allowed) return []; // Člen bez přístupu tlačítko VŮBEC nevidí
 
-   return [{
-  icon: ICON_TIMER,
-  text: 'Sledovat čas',
-  callback: (t) => t.popup({
-    title: 'TimeTrack',
-    url: './tracker-popup.html',
-    // Odstraň fixní height, pokud používáš t.sizeTo() v popupu, 
-    // nebo ji nastav jako maximální/počáteční.
-  }),
-}];
+    return [{
+      icon: ICON_TIMER,
+      text: 'Sledovat čas',
+      callback: (t) => t.popup({
+        title: 'TimeTrack',
+        url: './tracker-popup.html',
+        height: 480,
+      }),
+    }];
+  },
 
   // Tlačítko na nástěnce – report (jen admini) + nastavení
   'board-buttons': async (t) => {
