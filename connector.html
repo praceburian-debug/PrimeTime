@@ -117,8 +117,9 @@ TrelloPowerUp.initialize({
     const isRunning = !!(running?.startedAt);
 
     // Kliknutí vždy otevře tracker popup
-    // Modal = fullscreen overlay s drag & resize floating oknem
-    const openTracker = (t) => t.modal({ title: ' ', url: './tracker-modal.html', fullscreen: true });
+    // Popup = otevře se vedle badge, nezakrývá zbytek karty
+    // Šířka 560px je nastavena v HTML; výška se přizpůsobí přes t.sizeTo()
+    const openTracker = (t) => t.popup({ title: 'TimeTrack', url: './tracker-popup.html' });
 
     const badges = [];
 
