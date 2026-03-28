@@ -35,14 +35,19 @@ async function getCurrentMemberId(t) {
 }
 
 async function isAdmin(t) {
-  const perms = await getPermissions(t);
-  const memberId = await getCurrentMemberId(t);
-  
-  // Pokud pole admins neexistuje nebo je prázdné, 
-  // považuj aktuálního uživatele za admina (pro první nastavení)
-  if (!perms.admins || perms.admins.length === 0) return true;
-  
-  return perms.admins.includes(memberId);
+  try {
+    const perms = await t.get('board', 'shared', 'tt-permissions');
+    const member = await t.member('id');
+    
+    // Pokud permissions neexistují nebo pole adminů je prázdné -> jsi admin
+    if (!perms || !perms.admins || perms.admins.length === 0) {
+      return true;
+    }
+    
+    return perms.admins.includes(member.id);
+  } catch (e) {
+    return true; // V případě chyby raději práva dej, ať se nezablokuješ
+  }
 }
 
 async function canTrack(t) {
