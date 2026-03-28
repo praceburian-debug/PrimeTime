@@ -25,8 +25,13 @@ const ICON_CHART = 'https://cdn.jsdelivr.net/npm/lucide-static@0.441.0/icons/bar
 // ── Helpers ──────────────────────────────────────────────────
 
 async function getPermissions(t) {
-  const perms = await t.get('board', 'shared', 'tt-permissions');
-  return perms || { admins: [], trackers: [] };
+  try {
+    const perms = await t.get('board', 'shared', 'tt-permissions');
+    // Pokud perms neexistují, vrátíme prázdnou strukturu, aby .length neházel chybu
+    return perms || { admins: [], trackers: [] };
+  } catch (e) {
+    return { admins: [], trackers: [] };
+  }
 }
 
 async function getCurrentMemberId(t) {
@@ -36,17 +41,21 @@ async function getCurrentMemberId(t) {
 
 async function isAdmin(t) {
   try {
-    const perms = await t.get('board', 'shared', 'tt-permissions');
+    const perms = await getPermissions(t);
     const member = await t.member('id');
-    
-    // Pokud permissions neexistují nebo pole adminů je prázdné -> jsi admin
-    if (!perms || !perms.admins || perms.admins.length === 0) {
+    const memberId = member.id;
+
+    // KLÍČOVÁ ZMĚNA: Pokud je pole adminů prázdné, 
+    // PUSTÍME TĚ DÁL, abys mohl nastavení poprvé uložit.
+    if (!perms.admins || perms.admins.length === 0) {
       return true;
     }
     
-    return perms.admins.includes(member.id);
+    return perms.admins.includes(memberId);
   } catch (e) {
-    return true; // V případě chyby raději práva dej, ať se nezablokuješ
+    // V případě jakékoliv chyby v komunikaci s Trellem 
+    // tě raději pustíme jako admina, abychom tě nezablokovali.
+    return true; 
   }
 }
 
