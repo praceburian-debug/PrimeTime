@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>TimeTrack – Connector</title>
+  <title>PrimeTime – Connector</title>
   <script src="https://p.trellocdn.com/power-up.min.js"></script>
 </head>
 <body>
@@ -17,15 +17,14 @@ async function isAdmin(t){const[p,id]=await Promise.all([getPerms(t),getMid(t)])
 async function canTrack(t){const[p,id]=await Promise.all([getPerms(t),getMid(t)]);if(p.admins.includes(id))return true;return p.trackers.includes(id);}
 async function getLogs(t){return(await t.get('board','shared','tt-logs'))||[];}
 function fmtHM(m){const h=Math.floor(m/60),mm=m%60;return h>0?h+'h '+mm+'m':mm+'m';}
-function fmtRun(s){const h=Math.floor(s/3600),m=Math.floor((s%3600)/60);return h>0?h+':'+String(m).padStart(2,'0')+' běží':m+'m běží';}
+function fmtRun(startedAt){const s=Math.floor((Date.now()-startedAt)/1000),h=Math.floor(s/3600),m=Math.floor((s%3600)/60);return h>0?h+':'+String(m).padStart(2,'0')+' běží':m+'m běží';}
 
 TrelloPowerUp.initialize({
 
   'card-badges':async(t)=>{
     if(!await canTrack(t))return[];
     const card=await t.card('id');
-    const logs=await getLogs(t);
-    const tot=logs.filter(l=>l.cardId===card.id).reduce((s,l)=>s+l.mins,0);
+    const tot=(await getLogs(t)).filter(l=>l.cardId===card.id).reduce((s,l)=>s+l.mins,0);
     if(!tot)return[];
     return[{icon:ICON_CLOCK,text:fmtHM(tot),color:'purple'}];
   },
@@ -38,13 +37,10 @@ TrelloPowerUp.initialize({
     const myM=cl.filter(l=>l.memberId===mid).reduce((s,l)=>s+l.mins,0);
     const allM=cl.reduce((s,l)=>s+l.mins,0);
     const isRun=!!(running?.startedAt);
-
-    // Popup — nezakrývá zbytek karty, ale je dostatečně velký
-    const open=(t)=>t.popup({title:'TimeTrack',url:'./tracker-popup.html',height:600});
+    const open=(t)=>t.popup({title:'PrimeTime',url:'./tracker-popup.html',height:600});
     const badges=[];
     if(isRun){
-      const secs=Math.floor((Date.now()-running.startedAt)/1000);
-      badges.push({title:'Časovač běží',text:'● '+fmtRun(secs),color:'green',icon:ICON_TIMER,callback:open,refresh:30});
+      badges.push({title:'Časovač běží – klikni',text:'● '+fmtRun(running.startedAt),color:'green',icon:ICON_TIMER,callback:open,refresh:30});
     }else if(admin){
       badges.push({title:allM>0?'Celkový čas týmu':'Spustit sledování',text:allM>0?'▶ '+fmtHM(allM):'▶ Spustit',color:allM>0?'purple':null,icon:ICON_TIMER,callback:open});
     }else{
@@ -58,17 +54,17 @@ TrelloPowerUp.initialize({
 
   'board-buttons':async(t)=>{
     if(!await isAdmin(t))return[];
-    return[{icon:ICON_CHART,text:'Time Report',callback:(t)=>t.modal({title:'TimeTrack – Report',url:'./report.html',fullscreen:true})}];
+    return[{icon:ICON_CHART,text:'Time Report',callback:(t)=>t.modal({title:'PrimeTime – Report',url:'./report.html',fullscreen:true})}];
   },
 
   'show-settings':async(t)=>{
     if(!await isAdmin(t))return t.popup({title:'Přístup odepřen',url:'./no-access.html',height:100});
-    return t.popup({title:'TimeTrack – Nastavení',url:'./settings.html',height:560});
+    return t.popup({title:'PrimeTime – Nastavení',url:'./settings.html',height:560});
   },
 
 },{
   appKey:'e4d8502325aff04bbe003d7c3eea4acf',
-  appName:'TimeTrack',
+  appName:'PrimeTime',
 });
 </script>
 </body>

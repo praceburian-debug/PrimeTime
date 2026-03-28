@@ -2,225 +2,94 @@
 <html lang="cs">
 <head>
 <meta charset="UTF-8">
-<title>TimeTrack – Nastavení</title>
+<title>PrimeTime – Nastavení</title>
 <script src="https://p.trellocdn.com/power-up.min.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap');
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  :root {
-    --bg: #0D0D0F; --surface: #16161A; --surface2: #1E1E24; --surface3: #26262E;
-    --border: rgba(255,255,255,0.08); --border2: rgba(255,255,255,0.14);
-    --text: #F0EFE8; --muted: #7A7A88;
-    --accent: #6C5CE7; --accent2: #A29BFE;
-    --green: #00B894; --red: #D63031;
-    --font-body: 'Inter', sans-serif;
-  }
-  body { font-family: var(--font-body); background: var(--bg); color: var(--text); padding: 0; }
-
-  .section { padding: 14px 16px; border-bottom: 1px solid var(--border); }
-  .section-title {
-    font-size: 11px; color: var(--muted); text-transform: uppercase;
-    letter-spacing: 0.08em; font-weight: 500; margin-bottom: 10px;
-  }
-
-  /* ROLE LEGENDA */
-  .legend { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 2px; }
-  .role-pill {
-    font-size: 10px; font-weight: 500; padding: 2px 8px;
-    border-radius: 20px; border: 1px solid;
-  }
-  .pill-admin { background: rgba(108,92,231,0.15); color: var(--accent2); border-color: rgba(108,92,231,0.3); }
-  .pill-tracker { background: rgba(0,184,148,0.12); color: #55EFC4; border-color: rgba(0,184,148,0.25); }
-  .pill-none { background: rgba(255,255,255,0.04); color: var(--muted); border-color: var(--border2); }
-
-  /* MEMBER ROWS */
-  .member-row {
-    display: flex; align-items: center; gap: 10px;
-    padding: 9px 0; border-bottom: 1px solid var(--border);
-  }
-  .member-row:last-child { border-bottom: none; }
-
-  .avatar {
-    width: 30px; height: 30px; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 11px; font-weight: 600; color: white; flex-shrink: 0;
-  }
-  .member-info { flex: 1; min-width: 0; }
-  .member-name { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .member-username { font-size: 11px; color: var(--muted); }
-
-  .role-select {
-    background: var(--surface2); border: 1px solid var(--border2);
-    color: var(--text); border-radius: 7px; padding: 5px 8px;
-    font-size: 12px; font-family: var(--font-body); outline: none;
-    cursor: pointer; transition: border-color 0.15s; flex-shrink: 0;
-  }
-  .role-select:focus { border-color: var(--accent); }
-
-  /* SAVE BTN */
-  .footer { padding: 12px 16px; }
-  .btn-save {
-    width: 100%; padding: 10px; background: var(--accent); color: white;
-    border: none; border-radius: 8px; font-size: 13px; font-weight: 500;
-    font-family: var(--font-body); cursor: pointer; transition: background 0.15s;
-  }
-  .btn-save:hover { background: #7C6AF0; }
-  .btn-save:disabled { opacity: 0.4; cursor: not-allowed; }
-
-  .toast {
-    position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%) translateY(6px);
-    background: var(--surface2); border: 1px solid var(--border2); border-radius: 8px;
-    padding: 8px 14px; font-size: 12px; font-weight: 500;
-    opacity: 0; transition: all 0.2s; pointer-events: none; white-space: nowrap;
-  }
-  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-
-  .loading { padding: 24px; text-align: center; color: var(--muted); font-size: 13px; }
-  .info-box {
-    background: rgba(108,92,231,0.08); border: 1px solid rgba(108,92,231,0.2);
-    border-radius: 8px; padding: 10px 12px; font-size: 12px; color: var(--accent2);
-    margin-bottom: 10px; line-height: 1.5;
-  }
-  .self-badge {
-    font-size: 10px; padding: 1px 6px; border-radius: 4px;
-    background: rgba(108,92,231,0.2); color: var(--accent2); margin-left: 6px;
-  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  :root{--bg:#0D0D0F;--s:#16161A;--s2:#1E1E24;--s3:#26262E;--b:rgba(255,255,255,0.08);--b2:rgba(255,255,255,0.14);--txt:#F0EFE8;--m:#7A7A88;--ac:#6C5CE7;--ac2:#A29BFE;--gr:#00B894;--f:'Inter',sans-serif;}
+  body{font-family:var(--f);background:var(--bg);color:var(--txt);padding:0;}
+  .sec{padding:12px 14px;border-bottom:1px solid var(--b);}
+  .st{font-size:10px;color:var(--m);text-transform:uppercase;letter-spacing:.08em;font-weight:500;margin-bottom:8px;}
+  .info{background:rgba(108,92,231,.08);border:1px solid rgba(108,92,231,.2);border-radius:7px;padding:8px 10px;font-size:11px;color:var(--ac2);margin-bottom:8px;line-height:1.5;}
+  .legend{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:2px;}
+  .pill{font-size:10px;font-weight:500;padding:2px 8px;border-radius:20px;border:1px solid;}
+  .pa{background:rgba(108,92,231,.15);color:var(--ac2);border-color:rgba(108,92,231,.3);}
+  .pt{background:rgba(0,184,148,.12);color:#55EFC4;border-color:rgba(0,184,148,.25);}
+  .pn{background:rgba(255,255,255,.04);color:var(--m);border-color:var(--b2);}
+  .mi{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--b);}
+  .mi:last-child{border-bottom:none;}
+  .av{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:white;flex-shrink:0;}
+  .mn2{flex:1;}
+  .mn2 .name{font-size:13px;font-weight:500;}
+  .mn2 .uname{font-size:11px;color:var(--m);}
+  .sb{font-size:10px;padding:1px 6px;border-radius:4px;background:rgba(108,92,231,.2);color:var(--ac2);margin-left:5px;}
+  select.rs{background:var(--s2);border:1px solid var(--b2);color:var(--txt);border-radius:7px;padding:5px 8px;font-size:12px;font-family:var(--f);outline:none;cursor:pointer;flex-shrink:0;}
+  select.rs:focus{border-color:var(--ac);}
+  .save{display:block;width:calc(100% - 28px);margin:12px 14px;padding:10px;background:var(--ac);color:white;border:none;border-radius:8px;font-size:13px;font-weight:500;font-family:var(--f);cursor:pointer;transition:background .15s;}
+  .save:hover{background:#7C6AF0;}
+  .save:disabled{opacity:.4;cursor:not-allowed;}
+  .toast2{position:fixed;bottom:10px;left:50%;transform:translateX(-50%) translateY(6px);background:var(--s2);border:1px solid var(--b2);border-radius:8px;padding:7px 14px;font-size:12px;font-weight:500;opacity:0;transition:all .2s;pointer-events:none;white-space:nowrap;}
+  .toast2.on{opacity:1;transform:translateX(-50%) translateY(0);}
+  .loading{padding:20px;text-align:center;color:var(--m);font-size:13px;}
 </style>
 </head>
 <body>
-
-<div id="loading" class="loading">Načítám členy nástěnky…</div>
+<div id="loading" class="loading">Načítám členy…</div>
 <div id="content" style="display:none">
-
-  <div class="section">
-    <div class="section-title">Oprávnění</div>
-    <div class="info-box">
+  <div class="sec">
+    <div class="st">Oprávnění</div>
+    <div class="info">
       <strong>Admin</strong> – vidí Time Report, spravuje přístupy<br>
       <strong>Tracker</strong> – vidí časovač, loguje čas, vidí jen svůj čas v reportu<br>
       <strong>Bez přístupu</strong> – nevidí časovač vůbec
     </div>
     <div class="legend">
-      <span class="role-pill pill-admin">Admin</span>
-      <span class="role-pill pill-tracker">Tracker</span>
-      <span class="role-pill pill-none">Bez přístupu</span>
+      <span class="pill pa">Admin</span>
+      <span class="pill pt">Tracker</span>
+      <span class="pill pn">Bez přístupu</span>
     </div>
   </div>
-
-  <div class="section">
-    <div class="section-title">Členové nástěnky</div>
-    <div id="member-list"></div>
+  <div class="sec">
+    <div class="st">Členové nástěnky</div>
+    <div id="mlist"></div>
   </div>
-
-  <div class="footer">
-    <button class="btn-save" id="btn-save" onclick="save()">Uložit nastavení</button>
-  </div>
+  <button class="save" id="btn-save" onclick="save()">Uložit nastavení</button>
 </div>
-
-<div class="toast" id="toast"></div>
-
+<div class="toast2" id="t2"></div>
 <script>
-const t = TrelloPowerUp.iframe();
-
-const COLORS = ['#6C5CE7','#00B894','#E17055','#0984E3','#FDCB6E','#A29BFE','#D63031','#00CEC9'];
-function memberColor(id) {
-  let h = 0; for (let c of id) h = (h * 31 + c.charCodeAt(0)) & 0xffffffff;
-  return COLORS[Math.abs(h) % COLORS.length];
-}
-function initials(name) {
-  const p = (name || '?').trim().split(' ');
-  return (p[0][0] + (p[1]?.[0] || '')).toUpperCase();
-}
-function toast(msg) {
-  const el = document.getElementById('toast');
-  el.textContent = msg; el.classList.add('show');
-  setTimeout(() => el.classList.remove('show'), 2200);
-}
-
-let currentMemberId = null;
-// roleMap: memberId → 'admin' | 'tracker' | 'none'
-let roleMap = {};
-
-async function init() {
-  const [boardMembers, member, perms] = await Promise.all([
-    t.board('members'),
-    t.member('id'),
-    t.get('board', 'shared', 'tt-permissions'),
-  ]);
-
-  currentMemberId = member.id;
-  const adminIds = perms?.admins || [];
-  const trackerIds = perms?.trackers || [];
-
-  // Sestavíme roleMap
-  boardMembers.members.forEach(m => {
-    if (adminIds.includes(m.id)) roleMap[m.id] = 'admin';
-    else if (trackerIds.includes(m.id)) roleMap[m.id] = 'tracker';
-    else roleMap[m.id] = 'none';
+const t=TrelloPowerUp.iframe();
+const COLS=['#6C5CE7','#00B894','#E17055','#0984E3','#FDCB6E','#A29BFE','#D63031','#00CEC9'];
+function mc(id){let h=0;for(const c of String(id))h=(h*31+c.charCodeAt(0))&0xffffffff;return COLS[Math.abs(h)%COLS.length];}
+function ini(n){const p=(n||'?').trim().split(' ');return(p[0][0]+(p[1]?.[0]||'')).toUpperCase();}
+function toast(msg){const e=document.getElementById('t2');e.textContent=msg;e.classList.add('on');setTimeout(()=>e.classList.remove('on'),2200);}
+let mid=null,roleMap={};
+async function init(){
+  const[board,member,perms]=await Promise.all([t.board('members'),t.member('id'),t.get('board','shared','tt-permissions')]);
+  mid=member.id;
+  const admins=perms?.admins||[],trackers=perms?.trackers||[];
+  board.members.forEach(m=>{
+    if(admins.includes(m.id))roleMap[m.id]='admin';
+    else if(trackers.includes(m.id))roleMap[m.id]='tracker';
+    else roleMap[m.id]='none';
   });
-
-  // Pokud žádný admin nebyl nastaven, první volání = aktuální uživatel se stane adminem
-  if (adminIds.length === 0) {
-    roleMap[currentMemberId] = 'admin';
-  }
-
-  renderMembers(boardMembers.members);
-  document.getElementById('loading').style.display = 'none';
-  document.getElementById('content').style.display = 'block';
-}
-
-function renderMembers(members) {
-  const el = document.getElementById('member-list');
-  el.innerHTML = members.map(m => {
-    const color = memberColor(m.id);
-    const ini = initials(m.fullName);
-    const role = roleMap[m.id] || 'none';
-    const isSelf = m.id === currentMemberId;
-
-    // Aktuální admin nemůže odebrat sám sobě admin roli (ochrana)
-    const adminDisabled = isSelf ? 'disabled' : '';
-
-    return `
-      <div class="member-row">
-        <div class="avatar" style="background:${color}">${ini}</div>
-        <div class="member-info">
-          <div class="member-name">
-            ${m.fullName}
-            ${isSelf ? '<span class="self-badge">já</span>' : ''}
-          </div>
-          <div class="member-username">@${m.username}</div>
-        </div>
-        <select class="role-select" id="role-${m.id}" onchange="onRoleChange('${m.id}', this.value)" ${adminDisabled}>
-          <option value="admin"   ${role === 'admin'   ? 'selected' : ''}>Admin</option>
-          <option value="tracker" ${role === 'tracker' ? 'selected' : ''}>Tracker</option>
-          <option value="none"    ${role === 'none'    ? 'selected' : ''}>Bez přístupu</option>
-        </select>
-      </div>
-    `;
+  if(admins.length===0)roleMap[mid]='admin';
+  document.getElementById('loading').style.display='none';
+  document.getElementById('content').style.display='block';
+  document.getElementById('mlist').innerHTML=board.members.map(m=>{
+    const c=mc(m.id),role=roleMap[m.id]||'none',isSelf=m.id===mid;
+    return'<div class="mi"><div class="av" style="background:'+c+'">'+ini(m.fullName)+'</div><div class="mn2"><div class="name">'+m.fullName+(isSelf?'<span class="sb">já</span>':'')+'</div><div class="uname">@'+m.username+'</div></div><select class="rs" id="r-'+m.id+'" onchange="roleMap[\''+m.id+'\']=this.value"'+(isSelf?' disabled':')+'><option value="admin"'+(role==='admin'?' selected':'')+'>Admin</option><option value="tracker"'+(role==='tracker'?' selected':'')+'>Tracker</option><option value="none"'+(role==='none'?' selected':'')+'>Bez přístupu</option></select></div>';
   }).join('');
 }
-
-function onRoleChange(memberId, newRole) {
-  roleMap[memberId] = newRole;
-}
-
-async function save() {
-  const btn = document.getElementById('btn-save');
-  btn.disabled = true;
-  btn.textContent = 'Ukládám…';
-
-  const admins = Object.entries(roleMap).filter(([,r]) => r === 'admin').map(([id]) => id);
-  const trackers = Object.entries(roleMap).filter(([,r]) => r === 'tracker').map(([id]) => id);
-
-  await t.set('board', 'shared', 'tt-permissions', { admins, trackers });
-
-  btn.disabled = false;
-  btn.textContent = 'Uložit nastavení';
+async function save(){
+  const btn=document.getElementById('btn-save');btn.disabled=true;btn.textContent='Ukládám…';
+  const admins=Object.entries(roleMap).filter(([,r])=>r==='admin').map(([id])=>id);
+  const trackers=Object.entries(roleMap).filter(([,r])=>r==='tracker').map(([id])=>id);
+  await t.set('board','shared','tt-permissions',{admins,trackers});
+  btn.disabled=false;btn.textContent='Uložit nastavení';
   toast('✓ Nastavení uloženo');
-
-  // Zavřeme popup po uložení
-  setTimeout(() => t.closePopup(), 1200);
+  setTimeout(()=>t.closePopup(),1200);
 }
-
 init();
 </script>
 </body>
