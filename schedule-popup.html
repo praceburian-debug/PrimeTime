@@ -145,7 +145,7 @@
 
 <script>
 const BACKEND = 'https://prime-time.vercel.app';
-const t = TrelloPowerUp.iframe();
+const t = TrelloPowerUp.iframe({ appKey: "e4d8502325aff04bbe003d7c3eea4acf", appName: "PrimeTime" });
 
 const COLS=['#6C5CE7','#00B894','#E17055','#0984E3','#FDCB6E','#A29BFE','#D63031','#00CEC9'];
 function mc(id){let h=0;for(const c of String(id))h=(h*31+c.charCodeAt(0))&0xffffffff;return COLS[Math.abs(h)%COLS.length];}

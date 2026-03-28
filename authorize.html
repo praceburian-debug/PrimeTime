@@ -33,7 +33,7 @@
 
 <script>
 const BACKEND = 'https://prime-time.vercel.app';
-const t = TrelloPowerUp.iframe();
+const t = TrelloPowerUp.iframe({ appKey: "e4d8502325aff04bbe003d7c3eea4acf", appName: "PrimeTime" });
 
 async function authorize() {
   const btn = document.getElementById('btn');
