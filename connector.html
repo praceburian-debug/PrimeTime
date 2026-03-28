@@ -35,9 +35,13 @@ async function getCurrentMemberId(t) {
 }
 
 async function isAdmin(t) {
-  const [perms, memberId] = await Promise.all([getPermissions(t), getCurrentMemberId(t)]);
-  // První člen co Power-Up nainstaluje se stane super adminem automaticky
-  if (perms.admins.length === 0) return true;
+  const perms = await getPermissions(t);
+  const memberId = await getCurrentMemberId(t);
+  
+  // Pokud pole admins neexistuje nebo je prázdné, 
+  // považuj aktuálního uživatele za admina (pro první nastavení)
+  if (!perms.admins || perms.admins.length === 0) return true;
+  
   return perms.admins.includes(memberId);
 }
 
