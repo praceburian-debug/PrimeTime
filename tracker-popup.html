@@ -125,6 +125,15 @@
   .ldel{background:none;border:none;color:var(--m);cursor:pointer;font-size:13px;padding:1px 3px;border-radius:3px;line-height:1;flex-shrink:0;transition:all .1s;}
   .ldel:hover{background:var(--rb);color:var(--rt);}
 
+  /* Inline editace */
+  .ld{cursor:text;}.ld:hover{color:var(--ac2);}
+  .lt{cursor:text;}.lt:hover{color:var(--ac);}
+  .edit-desc{font-family:var(--f);font-size:11px;background:var(--s2);border:1px solid var(--ac);border-radius:4px;padding:2px 5px;color:var(--txt);outline:none;width:100%;min-width:0;}
+  .edit-time{font-family:var(--fm);font-size:10px;background:var(--s2);border:1px solid var(--ac);border-radius:4px;padding:2px 3px;color:var(--txt);outline:none;width:26px;text-align:center;-moz-appearance:textfield;}
+  .edit-time::-webkit-inner-spin-button,.edit-time::-webkit-outer-spin-button{-webkit-appearance:none;}
+  .edit-sep{color:var(--m);font-family:var(--fm);font-size:10px;}
+  .le.editing{background:rgba(108,92,231,.06);border-radius:6px;}
+
   /* ── Footer ── */
   #lf{display:flex;justify-content:space-between;align-items:center;padding:7px 10px 10px;border-top:1px solid var(--b);}
   .tl{font-size:10px;color:var(--m);font-weight:500;}
@@ -287,10 +296,62 @@ async function renderLog(){
   document.getElementById('lcnt').textContent=vis.length>0?vis.length+' zázn.':'';
   if(!vis.length){el.innerHTML='<div class="empty">Žádné záznamy</div>';return;}
   el.innerHTML=[...vis].reverse().map(l=>{
-    const c=mc(l.memberId),canDel=isAdmin||l.memberId===member?.id;
-    return'<div class="le"><div class="av" style="background:'+c+'">'+ini(l.memberName)+'</div><div class="li2"><div class="ld">'+(l.desc||'—')+'</div><div class="lm">'+l.memberName+' · '+l.date+'</div></div><div class="lt">'+fmtHM(l.mins)+'</div>'+(canDel?'<button class="ldel" onclick="deleteLog(\''+l.id+'\')" title="Smazat">×</button>':'')+'</div>';
+    const c=mc(l.memberId);
+    const canEdit=isAdmin||l.memberId===member?.id;
+    const h=Math.floor(l.mins/60),m=l.mins%60;
+    const descEl=canEdit
+      ?'<div class="ld" onclick="editDesc(this,\''+l.id+'\')">'+( l.desc||'—')+'</div>'
+      :'<div class="ld">'+( l.desc||'—')+'</div>';
+    const timeEl=canEdit
+      ?'<div class="lt" onclick="editTime(this,\''+l.id+'\','+h+','+m+')">'+fmtHM(l.mins)+'</div>'
+      :'<div class="lt">'+fmtHM(l.mins)+'</div>';
+    return'<div class="le" id="le-'+l.id+'"><div class="av" style="background:'+c+'">'+ini(l.memberName)+'</div><div class="li2">'+descEl+'<div class="lm">'+l.memberName+' · '+l.date+'</div></div>'+timeEl+(canEdit?'<button class="ldel" onclick="deleteLog(\''+l.id+'\')" title="Smazat">×</button>':'')+'</div>';
   }).join('');
 }
+
+function editDesc(el,logId){
+  if(el.querySelector('input'))return;
+  const orig=el.textContent==='—'?'':el.textContent;
+  el.innerHTML='<input class="edit-desc" value="'+orig.replace(/"/g,'&quot;')+'" placeholder="Popis…">';
+  const inp=el.querySelector('input');
+  inp.focus();inp.select();
+  const done=async()=>{const val=inp.value.trim();el.textContent=val||'—';await updateLog(logId,{desc:val});};
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();inp.blur();}if(e.key==='Escape'){el.textContent=orig||'—';}});
+  inp.addEventListener('blur',done,{once:true});
+}
+
+function editTime(el,logId,origH,origM){
+  if(el.querySelector('input'))return;
+  el.innerHTML='<input class="edit-time" id="eh" type="number" min="0" max="99" value="'+origH+'"><span class="edit-sep">:</span><input class="edit-time" id="em" type="number" min="0" max="59" value="'+String(origM).padStart(2,'0')+'">';
+  const ih=el.querySelector('#eh'),im=el.querySelector('#em');
+  ih.focus();ih.select();
+  let saved=false;
+  const done=async()=>{
+    if(saved)return;saved=true;
+    const h=parseInt(ih.value)||0,m2=parseInt(im.value)||0;
+    const mins=h*60+m2;
+    if(mins<=0){el.textContent=fmtHM(origH*60+origM);return;}
+    el.textContent=fmtHM(mins);
+    await updateLog(logId,{mins});
+    const all=await api.get('board','shared','tt-logs')||[];
+    const tot=all.filter(l=>l.cardId===cardId).reduce((s,l)=>s+l.mins,0);
+    document.getElementById('ltot').textContent=fmtHM(tot);
+    await api.set('card','shared','tt-total',tot);
+  };
+  const onKey=e=>{if(e.key==='Enter'){e.preventDefault();done();}if(e.key==='Escape'){saved=true;el.textContent=fmtHM(origH*60+origM);}};
+  ih.addEventListener('keydown',onKey);im.addEventListener('keydown',onKey);
+  ih.addEventListener('blur',()=>setTimeout(done,120));im.addEventListener('blur',()=>setTimeout(done,120));
+}
+
+async function updateLog(logId,changes){
+  const all=await api.get('board','shared','tt-logs')||[];
+  const idx=all.findIndex(l=>l.id===logId);
+  if(idx===-1)return;
+  all[idx]={...all[idx],...changes};
+  await api.set('board','shared','tt-logs',all);
+  api.resize();
+}
+
 init();
 </script>
 </body>
