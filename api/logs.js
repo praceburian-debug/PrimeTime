@@ -21,15 +21,16 @@ export default async function handler(req, res) {
 
 async function createLog(req, res) {
   const { memberId, memberName, boardId, boardName, cardId, cardName, cardLabels, mins, desc, date } = req.body || {};
-  if (!memberId || !boardId || !cardId || !mins) return res.status(400).json({ error: 'Chybí povinná pole' });
+  if (!memberId || !cardId || !mins) return res.status(400).json({ error: 'Chybí povinná pole' });
+  const safeBoardId = boardId || 'unknown';
 
   const logId = Date.now().toString(36) + Math.random().toString(36).slice(2,6);
-  const log = { id:logId, memberId, memberName, boardId, boardName:boardName||boardId, cardId, cardName:cardName||cardId, cardLabels:cardLabels||[], mins, desc:desc||'', date:date||new Date().toISOString().slice(0,10), createdAt:new Date().toISOString() };
+  const log = { id:logId, memberId, memberName, boardId:safeBoardId, boardName:boardName||safeBoardId, cardId, cardName:cardName||cardId, cardLabels:cardLabels||[], mins, desc:desc||'', date:date||new Date().toISOString().slice(0,10), createdAt:new Date().toISOString() };
 
   await redis.set(`log:${logId}`, JSON.stringify(log), { ex: 60*60*24*365*2 });
-  await redis.zadd(`board-logs:${boardId}`, { score: Date.now(), member: logId });
+  await redis.zadd(`board-logs:${safeBoardId}`, { score: Date.now(), member: logId });
   await redis.sadd(`member-logs:${memberId}`, logId);
-  await updateCardTotal(boardId, cardId);
+  await updateCardTotal(safeBoardId, cardId);
 
   return res.status(200).json({ ok: true, log });
 }
