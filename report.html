@@ -488,17 +488,17 @@ function rLog(){
     const avatars=workers.slice(0,4).map(([id,n])=>'<div class="g-av" style="background:'+mc(id)+'" title="'+n+'">'+ini(n)+'</div>').join('');
     const more=workers.length>4?'<div class="g-av" style="background:var(--s3);color:var(--m)">+'+( workers.length-4)+'</div>':'';
 
-    const entriesHtml=[...entries].sort((a,b)=>b.date.localeCompare(a.date)).map(l=>{
-      const c=mc(l.memberId);
-      const h=Math.floor(l.mins/60),m=l.mins%60;
-      const did=l.id.replace(/'/g,"\\''");
+    const entriesHtml=[...entries].sort((a,b)=>b.date.localeCompare(a.date)).map(function(l){
+      var c=mc(l.memberId);
+      var h=Math.floor(l.mins/60),m=l.mins%60;
+      var lid=l.id;
       return'<div class="entry-row">'
         +'<div class="e-av" style="background:'+c+'">'+ini(l.memberName)+'</div>'
         +'<div class="e-info">'
-        +'<div class="e-desc" onclick="rEditDesc(this,&quot;'+l.id+'&quot;)">'+(l.desc||'—')+'</div>'
+        +'<div class="e-desc" onclick="rEditDesc(this,\''+lid+'\')">'+(l.desc||'—')+'</div>'
         +'<div class="e-meta">'+l.memberName+' · '+l.date+'</div>'
         +'</div>'
-        +'<div class="e-time" onclick="rEditTime(this,&quot;'+l.id+'&quot;,'+h+','+m+')">'+fmtHM(l.mins)+'</div>'
+        +'<div class="e-time" onclick="rEditTime(this,\''+lid+'\','+h+','+m+')">'+fmtHM(l.mins)+'</div>'
         +'</div>';
     }).join('');
 
