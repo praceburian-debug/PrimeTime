@@ -325,7 +325,7 @@ async function init(){
       const board=await _t.board('id','name');
       currentBoardId=board.id;
     }
-    const logs=await fetchLogs();
+    const logs=await fetchLogs(currentBoardId);
     allLogs=logs;
     logs.forEach(l=>{
       if(l.cardName)cardNames[l.cardId]=l.cardName;
@@ -494,10 +494,10 @@ function rLog(){
       return'<div class="entry-row">'
         +'<div class="e-av" style="background:'+c+'">'+ini(l.memberName)+'</div>'
         +'<div class="e-info">'
-          +'<div class="e-desc" onclick="rEditDesc(this,''+l.id+'')" title="Klikni pro editaci">'+(l.desc||'—')+'</div>'
+          +'<div class="e-desc" onclick="rEditDesc(this,\'+l.id+\')" title="Klikni pro editaci">'+(l.desc||'—')+'</div>'
           +'<div class="e-meta">'+l.memberName+' · '+l.date+'</div>'
         +'</div>'
-        +'<div class="e-time" onclick="rEditTime(this,''+l.id+'','+h+','+m+')" title="Klikni pro editaci">'+fmtHM(l.mins)+'</div>'
+        +'<div class="e-time" onclick="rEditTime(this,\'+l.id+\','+h+','+m+')" title="Klikni pro editaci">'+fmtHM(l.mins)+'</div>'
         +'</div>';
     }).join('');
 
