@@ -7,52 +7,58 @@
 </head>
 <body>
 <script>
-const ICON_TIMER   = 'https://cdn.jsdelivr.net/npm/lucide-static@0.441.0/icons/timer.svg';
-const ICON_CLOCK   = 'https://cdn.jsdelivr.net/npm/lucide-static@0.441.0/icons/clock.svg';
-const ICON_CHART   = 'https://cdn.jsdelivr.net/npm/lucide-static@0.441.0/icons/bar-chart-2.svg';
-const ICON_COMMENT = 'https://cdn.jsdelivr.net/npm/lucide-static@0.441.0/icons/message-square.svg';
+const BACKEND     = 'https://prime-time.vercel.app';
+const ICON_TIMER  = 'https://cdn.jsdelivr.net/npm/lucide-static@0.441.0/icons/timer.svg';
+const ICON_CLOCK  = 'https://cdn.jsdelivr.net/npm/lucide-static@0.441.0/icons/clock.svg';
+const ICON_CHART  = 'https://cdn.jsdelivr.net/npm/lucide-static@0.441.0/icons/bar-chart-2.svg';
+const ICON_COMMENT= 'https://cdn.jsdelivr.net/npm/lucide-static@0.441.0/icons/message-square.svg';
 
 async function getPerms(t){return(await t.get('board','shared','tt-permissions'))||{admins:[],trackers:[]};}
 async function getMid(t){return(await t.member('id')).id;}
 async function isAdmin(t){const[p,id]=await Promise.all([getPerms(t),getMid(t)]);return p.admins.length===0||p.admins.includes(id);}
 async function canTrack(t){const[p,id]=await Promise.all([getPerms(t),getMid(t)]);if(p.admins.includes(id))return true;return p.trackers.includes(id);}
-async function getLogs(t){return(await t.get('board','shared','tt-logs'))||[];}
 function fmtHM(m){const h=Math.floor(m/60),mm=m%60;return h>0?h+'h '+mm+'m':mm+'m';}
 function fmtRun(startedAt){const s=Math.floor((Date.now()-startedAt)/1000),h=Math.floor(s/3600),m=Math.floor((s%3600)/60);return h>0?h+':'+String(m).padStart(2,'0')+' běží':m+'m běží';}
 
 TrelloPowerUp.initialize({
 
-  // authorization-status — Trello se ptá jestli je aktuální člen autorizovaný
-  // Vrátíme authorized:true pokud máme uložený příznak v member private storage
-  'authorization-status': async (t) => {
-    const authorized = await t.get('member', 'private', 'pt-authorized');
-    return { authorized: authorized === true };
+  'authorization-status':async(t)=>{
+    const authorized=await t.get('member','private','pt-authorized');
+    return{authorized:authorized===true};
   },
 
-  // show-authorization — Trello zobrazí tlačítko "Autorizovat" v nastavení Power-Upu
-  'show-authorization': (t) => {
-    return t.popup({
-      title: 'PrimeTime – Autorizace',
-      url:   './authorize.html',
-      height: 200,
-    });
-  },
+  'show-authorization':(t)=>t.popup({title:'PrimeTime – Autorizace',url:'./authorize.html',height:200}),
 
+  // card-badges — z backendu
   'card-badges':async(t)=>{
     if(!await canTrack(t))return[];
     const card=await t.card('id');
-    const tot=(await getLogs(t)).filter(l=>l.cardId===card.id).reduce((s,l)=>s+l.mins,0);
-    if(!tot)return[];
-    return[{icon:ICON_CLOCK,text:fmtHM(tot),color:'purple'}];
+    try{
+      const res=await fetch(`${BACKEND}/api/logs?boardId=_&cardId=${card.id}`);
+      // Použijeme card-total cache
+      const tot=await fetch(`${BACKEND}/api/logs?boardId=_&cardId=${card.id}`)
+        .then(r=>r.json())
+        .then(d=>(d.logs||[]).reduce((s,l)=>s+l.mins,0))
+        .catch(()=>0);
+      if(!tot)return[];
+      return[{icon:ICON_CLOCK,text:fmtHM(tot),color:'purple'}];
+    }catch{return[];}
   },
 
   'card-detail-badges':async(t)=>{
     if(!await canTrack(t))return[];
     const[card,mid,admin]=await Promise.all([t.card('id'),getMid(t),isAdmin(t)]);
-    const[logs,running]=await Promise.all([getLogs(t),t.get('member','private','tt-running-'+card.id)]);
-    const cl=logs.filter(l=>l.cardId===card.id);
-    const myM=cl.filter(l=>l.memberId===mid).reduce((s,l)=>s+l.mins,0);
-    const allM=cl.reduce((s,l)=>s+l.mins,0);
+    const board=await t.board('id');
+    const running=await t.get('member','private','tt-running-'+card.id);
+
+    let allM=0,myM=0;
+    try{
+      const res=await fetch(`${BACKEND}/api/logs?boardId=${board.id}&cardId=${card.id}`);
+      const {logs=[]}=await res.json();
+      allM=logs.reduce((s,l)=>s+l.mins,0);
+      myM=logs.filter(l=>l.memberId===mid).reduce((s,l)=>s+l.mins,0);
+    }catch{}
+
     const isRun=!!(running?.startedAt);
     const open=(t)=>t.popup({title:'PrimeTime',url:'./tracker-popup.html',height:600});
     const badges=[];
@@ -74,19 +80,31 @@ TrelloPowerUp.initialize({
     const card=await t.card('id');
     const pending=jobs.filter(j=>j.cardId===card.id&&new Date(j.sendAt)>new Date());
     return[{
-      icon: ICON_COMMENT,
-      text: pending.length>0?`Naplánovat komentář (${pending.length})`:'Naplánovat komentář',
-      callback:(t)=>t.popup({
-        title:  'PrimeTime – Naplánovat komentář',
-        url:    './schedule-popup.html',
-        height: 520,
-      }),
+      icon:ICON_COMMENT,
+      text:pending.length>0?`Naplánovat komentář (${pending.length})`:'Naplánovat komentář',
+      callback:(t)=>t.popup({title:'PrimeTime – Naplánovat komentář',url:'./schedule-popup.html',height:520}),
     }];
   },
 
+  // board-buttons — admin vidí plný report, tracker vidí svůj report
   'board-buttons':async(t)=>{
-    if(!await isAdmin(t))return[];
-    return[{icon:ICON_CHART,text:'Time Report',callback:(t)=>t.modal({title:'PrimeTime – Report',url:'./report.html',fullscreen:true})}];
+    const[admin,allowed]=await Promise.all([isAdmin(t),canTrack(t)]);
+    if(!allowed&&!admin)return[];
+    const buttons=[];
+    if(admin){
+      buttons.push({
+        icon:ICON_CHART,
+        text:'Time Report',
+        callback:(t)=>t.modal({title:'PrimeTime – Report',url:'./report.html',fullscreen:true}),
+      });
+    }
+    // Tracker (i admin) vidí svůj osobní report
+    buttons.push({
+      icon:ICON_CLOCK,
+      text:'Můj report',
+      callback:(t)=>t.modal({title:'PrimeTime – Můj report',url:'./report-tracker.html',fullscreen:true}),
+    });
+    return buttons;
   },
 
   'show-settings':async(t)=>{

@@ -154,19 +154,23 @@
   /* Jednotlivé záznamy uvnitř skupiny */
   .entry-row{
     display:flex;align-items:center;gap:10px;
-    padding:8px 1.25rem 8px 2.5rem; /* odsazení vlevo = indent */
+    padding:8px 1.25rem 8px 2.5rem;
     border-bottom:1px solid var(--b);
-    font-size:12px;
-    transition:background .1s;
+    font-size:12px;transition:background .1s;
   }
   .entry-row:last-child{border-bottom:none;}
   .entry-row:hover{background:var(--s3);}
-
   .e-av{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;color:white;flex-shrink:0;}
   .e-info{flex:1;min-width:0;}
-  .e-desc{font-size:12px;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .e-desc{font-size:12px;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:text;}
+  .e-desc:hover{color:var(--ac2);}
   .e-meta{font-size:10px;color:var(--m);margin-top:2px;}
-  .e-time{font-family:var(--fm);font-size:11px;color:var(--ac2);flex-shrink:0;font-weight:500;}
+  .e-time{font-family:var(--fm);font-size:11px;color:var(--ac2);flex-shrink:0;font-weight:500;cursor:text;}
+  .e-time:hover{color:var(--ac);}
+  .r-edit-desc{font-family:var(--f);font-size:11px;background:var(--s2);border:1px solid var(--ac);border-radius:4px;padding:2px 5px;color:var(--txt);outline:none;width:100%;}
+  .r-edit-time{font-family:var(--fm);font-size:10px;background:var(--s2);border:1px solid var(--ac);border-radius:4px;padding:2px 3px;color:var(--txt);outline:none;width:28px;text-align:center;-moz-appearance:textfield;}
+  .r-edit-time::-webkit-inner-spin-button,.r-edit-time::-webkit-outer-spin-button{-webkit-appearance:none;}
+  .r-edit-sep{color:var(--m);font-size:10px;font-family:var(--fm);}
 
   /* Loading */
   .pl{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;gap:16px;}
@@ -181,6 +185,7 @@
 <div class="topbar">
   <div class="logo"><div class="logo-i">⏱</div>Prime<span>Time</span><span style="font-size:12px;color:var(--m);font-family:var(--f);font-weight:400;margin-left:4px">Report</span></div>
   <div class="tr">
+    <select id="f-board" class="inp" style="display:none;max-width:160px;font-size:12px;padding:5px 10px;border-radius:7px;" onchange="switchBoard(this.value)"></select>
     <button class="fb a" onclick="setPeriod('week',this)">Tento týden</button>
     <button class="fb" onclick="setPeriod('month',this)">Tento měsíc</button>
     <button class="fb" onclick="setPeriod('all',this)">Vše</button>
@@ -277,7 +282,13 @@ const MOCK=[
 ];
 
 let _t=null;if(IN_TRELLO)_t=TrelloPowerUp.iframe();
-async function fetchLogs(){if(!IN_TRELLO)return MOCK;return(await _t.get('board','shared','tt-logs'))||[];}
+async function fetchLogs(boardId){
+  if(!IN_TRELLO)return MOCK;
+  const bId=boardId||currentBoardId||'ALL';
+  const res=await fetch(`${BACKEND}/api/logs?boardId=${bId}`);
+  const {logs=[]}=await res.json();
+  return logs;
+}
 
 const COLS=['#6C5CE7','#00B894','#E17055','#0984E3','#FDCB6E','#A29BFE','#D63031','#00CEC9'];
 function mc(id){let h=0;for(const c of String(id))h=(h*31+c.charCodeAt(0))&0xffffffff;return COLS[Math.abs(h)%COLS.length];}
@@ -310,12 +321,18 @@ function gN(log){return cardNames[log.cardId]||log.cardName||log.cardId;}
 
 async function init(){
   try{
+    if(IN_TRELLO){
+      const board=await _t.board('id','name');
+      currentBoardId=board.id;
+    }
     const logs=await fetchLogs();
     allLogs=logs;
     logs.forEach(l=>{
       if(l.cardName)cardNames[l.cardId]=l.cardName;
       if(l.cardLabels&&l.cardLabels.length)cardLbls[l.cardId]=l.cardLabels;
+      if(l.boardName&&!allBoards.find(b=>b.id===l.boardId))allBoards.push({id:l.boardId,name:l.boardName});
     });
+    renderBoardFilter();
     document.getElementById('pl').style.display='none';
     document.getElementById('ct').style.display='block';
     renderAll();
@@ -324,6 +341,27 @@ async function init(){
     document.getElementById('ct').style.display='block';
     const er=document.getElementById('er');er.style.display='block';er.textContent='Chyba: '+e.message;
   }
+}
+
+function renderBoardFilter(){
+  const sel=document.getElementById('f-board');
+  if(!sel||allBoards.length<=1)return;
+  sel.innerHTML='<option value="">Všechny nástěnky</option>'+allBoards.map(b=>'<option value="'+b.id+'">'+b.name+'</option>').join('');
+  sel.style.display='block';
+}
+
+async function switchBoard(boardId){
+  document.getElementById('pl').style.display='flex';
+  document.getElementById('ct').style.display='none';
+  const logs=await fetchLogs(boardId||'ALL');
+  allLogs=logs;
+  logs.forEach(l=>{
+    if(l.cardName)cardNames[l.cardId]=l.cardName;
+    if(l.cardLabels&&l.cardLabels.length)cardLbls[l.cardId]=l.cardLabels;
+  });
+  document.getElementById('pl').style.display='none';
+  document.getElementById('ct').style.display='block';
+  renderAll();
 }
 
 function renderAll(){const l=byP(allLogs);rS(l);rM(l);rC(l);rDD(l);rLog();}
@@ -452,7 +490,15 @@ function rLog(){
 
     const entriesHtml=[...entries].sort((a,b)=>b.date.localeCompare(a.date)).map(l=>{
       const c=mc(l.memberId);
-      return'<div class="entry-row"><div class="e-av" style="background:'+c+'">'+ini(l.memberName)+'</div><div class="e-info"><div class="e-desc">'+(l.desc||'—')+'</div><div class="e-meta">'+l.memberName+' · '+l.date+'</div></div><div class="e-time">'+fmtHM(l.mins)+'</div></div>';
+      const h=Math.floor(l.mins/60),m=l.mins%60;
+      return'<div class="entry-row">'
+        +'<div class="e-av" style="background:'+c+'">'+ini(l.memberName)+'</div>'
+        +'<div class="e-info">'
+          +'<div class="e-desc" onclick="rEditDesc(this,''+l.id+'')" title="Klikni pro editaci">'+(l.desc||'—')+'</div>'
+          +'<div class="e-meta">'+l.memberName+' · '+l.date+'</div>'
+        +'</div>'
+        +'<div class="e-time" onclick="rEditTime(this,''+l.id+'','+h+','+m+')" title="Klikni pro editaci">'+fmtHM(l.mins)+'</div>'
+        +'</div>';
     }).join('');
 
     return`<div>
@@ -542,6 +588,53 @@ function exportCSV(){
   logs.forEach(l=>rows.push([l.memberName,gN(l),gL(l).map(lb=>lb.name).join('; '),l.desc||'',l.mins,l.date]));
   const csv=rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n');
   Object.assign(document.createElement('a'),{href:URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'})),download:'primetime-'+new Date().toISOString().slice(0,10)+'.csv'}).click();
+}
+
+
+// ── Inline editace v reportu ──────────────────────────────
+function rEditDesc(el,logId){
+  if(el.querySelector('input'))return;
+  const orig=el.textContent==='—'?'':el.textContent;
+  el.innerHTML='<input class="r-edit-desc" value="'+orig.replace(/"/g,'&quot;')+'">';
+  const inp=el.querySelector('input');
+  inp.focus();inp.select();
+  const done=async()=>{
+    const val=inp.value.trim();
+    el.textContent=val||'—';
+    await rUpdateLog(logId,{desc:val});
+  };
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();inp.blur();}if(e.key==='Escape'){el.textContent=orig||'—';}});
+  inp.addEventListener('blur',done,{once:true});
+}
+
+function rEditTime(el,logId,origH,origM){
+  if(el.querySelector('input'))return;
+  el.innerHTML='<input class="r-edit-time" id="reh" type="number" min="0" max="99" value="'+origH+'"><span class="r-edit-sep">:</span><input class="r-edit-time" id="rem" type="number" min="0" max="59" value="'+String(origM).padStart(2,'0')+'">';
+  const ih=el.querySelector('#reh'),im=el.querySelector('#rem');
+  ih.focus();ih.select();
+  let saved=false;
+  const done=async()=>{
+    if(saved)return;saved=true;
+    const h=parseInt(ih.value)||0,m=parseInt(im.value)||0;
+    const mins=h*60+m;
+    if(mins<=0){el.textContent=fmtHM(origH*60+origM);return;}
+    el.textContent=fmtHM(mins);
+    // Aktualizuj log v allLogs pro okamžitou konzistenci
+    const idx=allLogs.findIndex(l=>l.id===logId);
+    if(idx>=0)allLogs[idx].mins=mins;
+    await rUpdateLog(logId,{mins});
+  };
+  const onKey=e=>{if(e.key==='Enter'){e.preventDefault();done();}if(e.key==='Escape'){saved=true;el.textContent=fmtHM(origH*60+origM);}};
+  ih.addEventListener('keydown',onKey);im.addEventListener('keydown',onKey);
+  ih.addEventListener('blur',()=>setTimeout(done,120));im.addEventListener('blur',()=>setTimeout(done,120));
+}
+
+async function rUpdateLog(logId,changes){
+  await fetch(BACKEND+'/api/logs',{
+    method:'PATCH',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({logId,changes}),
+  });
 }
 
 init();
