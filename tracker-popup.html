@@ -277,12 +277,14 @@ async function addManual(){
   toast('✓ Přidáno '+fmtHM(mins));await renderLog();api.resize();
 }
 async function saveLog({mins,desc}){
+  const bId=boardId||'unknown';
+  const bName=boardName||'Board';
   const res=await fetch(BACKEND+'/api/logs',{
     method:'POST',
     headers:{'Content-Type':'application/json'},
     body:JSON.stringify({
       memberId:member.id,memberName:member.fullName,
-      boardId,boardName,cardId,cardName,cardLabels,
+      boardId:bId,boardName:bName,cardId,cardName,cardLabels,
       mins,desc,date:new Date().toISOString().slice(0,10),
     }),
   });
