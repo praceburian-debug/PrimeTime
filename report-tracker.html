@@ -366,7 +366,6 @@ async function loadAtt(){
     const d=await _t.get('member','private',ATT_KEY);
     attData=d||[];
   }else{
-    // Mock
     const today=new Date().toISOString().slice(0,10);
     const yesterday=new Date(Date.now()-86400000).toISOString().slice(0,10);
     attData=[
@@ -375,10 +374,32 @@ async function loadAtt(){
     ];
   }
   renderAtt();
+  // Sync souhrnů při každém otevření reportu
+  if(IN_TRELLO)syncAttSummary();
 }
 
 async function saveAtt(){
-  if(IN_TRELLO)await _t.set('member','private',ATT_KEY,attData);
+  if(IN_TRELLO){
+    await _t.set('member','private',ATT_KEY,attData);
+    // Synchronizuj měsíční souhrny do board shared — admin je může číst
+    await syncAttSummary();
+  }
+}
+
+async function syncAttSummary(){
+  if(!IN_TRELLO)return;
+  // Sestav souhrny per měsíc: { 'YYYY-MM': totalMins }
+  const summary={};
+  attData.forEach(r=>{
+    const m=attMins(r);
+    if(!m)return;
+    const month=r.date.slice(0,7); // YYYY-MM
+    summary[month]=(summary[month]||0)+m;
+  });
+  // Ulož do board shared pod klíčem pt-att-summary:{memberId}
+  const existing=await _t.get('board','shared','pt-att-summaries')||{};
+  existing[memberId]={memberName,summary,updatedAt:new Date().toISOString()};
+  await _t.set('board','shared','pt-att-summaries',existing);
 }
 
 function attMins(r){

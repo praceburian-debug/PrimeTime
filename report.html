@@ -124,6 +124,15 @@
   .lt2{font-size:13px;color:var(--m);}
   .empty{padding:2rem;text-align:center;color:var(--m);font-size:13px;}
   .erbox{background:rgba(214,48,49,.08);border:1px solid rgba(214,48,49,.2);border-radius:10px;padding:1rem 1.25rem;color:#FF7675;font-size:13px;margin-bottom:1rem;}
+  /* Admin docházka */
+  .att-table{width:100%;border-collapse:collapse;}
+  .att-table th{text-align:left;padding:9px 1.25rem;font-size:10px;color:var(--m);text-transform:uppercase;letter-spacing:.08em;font-weight:500;border-bottom:1px solid var(--b);background:var(--s2);}
+  .att-table td{padding:10px 1.25rem;font-size:13px;border-bottom:1px solid var(--b);vertical-align:middle;}
+  .att-table tr:last-child td{border-bottom:none;}
+  .att-table tr:hover td{background:var(--s2);}
+  .att-month-pill{font-size:11px;font-weight:500;padding:2px 8px;border-radius:5px;background:var(--s2);border:1px solid var(--b2);color:var(--m);cursor:pointer;margin-right:4px;transition:all .15s;}
+  .att-month-pill.a{background:var(--ac);color:white;border-color:var(--ac);}
+  .att-month-pill:hover:not(.a){background:var(--s3);color:var(--txt);}
   /* Pie sekce */
   .pie-section{margin-bottom:1.5rem;}
   .pie-title{font-family:var(--fh);font-size:14px;font-weight:600;margin-bottom:1rem;}
@@ -176,6 +185,7 @@
       <button class="tab" id="tab-btn-m" onclick="setTab('m',this)">Podle členů</button>
       <button class="tab" id="tab-btn-c" onclick="setTab('c',this)">Podle karet</button>
       <button class="tab" id="tab-btn-l" onclick="setTab('l',this)">Detailní log</button>
+      <button class="tab" id="tab-btn-a" onclick="setTab('a',this)">Docházka</button>
     </div>
     <div id="tab-b">
       <div class="tw" style="margin-bottom:1.25rem;">
@@ -225,6 +235,25 @@
         <div id="grouped-log"></div>
       </div>
     </div>
+
+    <!-- Záložka Docházka -->
+    <div id="tab-a" style="display:none">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+        <div id="att-month-pills" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+        <button class="eb" onclick="exportAdminAttCSV()">⬇ CSV</button>
+      </div>
+      <div class="tw">
+        <table class="att-table">
+          <thead><tr>
+            <th>Člen</th>
+            <th>Odpracováno</th>
+            <th>Aktualizováno</th>
+          </tr></thead>
+          <tbody id="att-admin-body"></tbody>
+        </table>
+      </div>
+    </div>
+
   </div>
 </div>
 <script>
@@ -570,7 +599,12 @@ function togglePicker(btn){const picker=document.getElementById('custom-picker')
 function closePicker(){document.getElementById('custom-picker').classList.remove('open');if(period!=='custom')document.getElementById('btn-custom').classList.remove('a');}
 function applyCustom(){customFrom=document.getElementById('cp-from').value;customTo=document.getElementById('cp-to').value;if(!customFrom&&!customTo){closePicker();return;}period='custom';document.querySelectorAll('.fb').forEach(b=>b.classList.remove('a'));document.getElementById('btn-custom').classList.add('a');const label=customFrom&&customTo?customFrom.slice(5)+' – '+customTo.slice(5):customFrom||customTo;document.getElementById('btn-custom').textContent=label;closePicker();renderAll();}
 document.addEventListener('click',e=>{const w=document.querySelector('.custom-wrap');if(w&&!w.contains(e.target))closePicker();});
-function setTab(tab,btn){document.querySelectorAll('.tab').forEach(b=>b.classList.remove('a'));btn.classList.add('a');['b','m','c','l'].forEach(n=>document.getElementById('tab-'+n).style.display=n===tab?'block':'none');}
+function setTab(tab,btn){
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('a'));
+  btn.classList.add('a');
+  ['b','m','c','l','a'].forEach(n=>document.getElementById('tab-'+n).style.display=n===tab?'block':'none');
+  if(tab==='a')loadAdminAtt();
+}
 
 function exportCSV(){
   let logs=byP(allLogs);if(lf.m)logs=logs.filter(l=>l.memberId===lf.m);if(lf.c)logs=logs.filter(l=>l.cardId===lf.c);if(lf.l)logs=logs.filter(l=>gL(l).some(lb=>lb.name===lf.l));if(lf.d)logs=logs.filter(l=>(l.desc||'').toLowerCase().includes(lf.d));if(lf.f)logs=logs.filter(l=>l.date>=lf.f);if(lf.t)logs=logs.filter(l=>l.date<=lf.t);
@@ -578,6 +612,79 @@ function exportCSV(){
   logs.forEach(l=>rows.push([l.memberName,gN(l),gL(l).map(lb=>lb.name).join('; '),l.desc||'',l.mins,l.date]));
   const csv=rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n');
   Object.assign(document.createElement('a'),{href:URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'})),download:'primetime-'+new Date().toISOString().slice(0,10)+'.csv'}).click();
+}
+
+// ── Admin docházka ────────────────────────────────────────
+let attSummaries={};
+let attSelectedMonth='';
+
+function fmtMinsAtt(m){const h=Math.floor(m/60),mm=m%60;return h>0?h+'h '+String(mm).padStart(2,'0')+'m':mm+'m';}
+
+async function loadAdminAtt(){
+  if(!IN_TRELLO){
+    // Mock
+    const ym=new Date().toISOString().slice(0,7);
+    const prev=new Date(Date.now()-32*86400000).toISOString().slice(0,7);
+    attSummaries={
+      'm1':{memberName:'Jakub Novák',summary:{[ym]:9120,[prev]:10260},updatedAt:new Date().toISOString()},
+      'm2':{memberName:'Tereza Dvořák',summary:{[ym]:8700,[prev]:9480},updatedAt:new Date().toISOString()},
+      'm3':{memberName:'Marek Svoboda',summary:{[ym]:7200,[prev]:8100},updatedAt:new Date().toISOString()},
+    };
+  }else{
+    const data=await _t.get('board','shared','pt-att-summaries');
+    attSummaries=data||{};
+  }
+  renderAdminAtt();
+}
+
+function renderAdminAtt(){
+  // Seřaď dostupné měsíce
+  const months=new Set();
+  Object.values(attSummaries).forEach(({summary})=>Object.keys(summary).forEach(m=>months.add(m)));
+  const sortedMonths=[...months].sort().reverse();
+  if(!attSelectedMonth&&sortedMonths.length)attSelectedMonth=sortedMonths[0];
+
+  // Month pills
+  const pills=document.getElementById('att-month-pills');
+  if(pills){
+    pills.innerHTML=sortedMonths.map(m=>'<span class="att-month-pill'+(m===attSelectedMonth?' a':'')+'" onclick="selectAttMonth(''+m+'')">'
+      +new Date(m+'-01').toLocaleDateString('cs-CZ',{month:'long',year:'numeric'})+'</span>').join('');
+  }
+
+  const tbody=document.getElementById('att-admin-body');
+  if(!Object.keys(attSummaries).length){
+    tbody.innerHTML='<tr><td colspan="3" style="text-align:center;color:var(--m);padding:2rem;font-size:13px">Žádná data — členové musí otevřít záložku Docházka ve svém reportu</td></tr>';
+    return;
+  }
+
+  const rows=Object.entries(attSummaries).map(([id,{memberName,summary,updatedAt}])=>{
+    const mins=summary[attSelectedMonth]||0;
+    const updated=updatedAt?new Date(updatedAt).toLocaleDateString('cs-CZ',{day:'numeric',month:'numeric',hour:'2-digit',minute:'2-digit'}):'—';
+    const c=COLS[Math.abs(id.split('').reduce((h,ch)=>h*31+ch.charCodeAt(0),0))%COLS.length];
+    const ini2=memberName.trim().split(' ').map((p,i)=>i===0?p[0]:(p[0]||'')).join('').toUpperCase();
+    return{memberName,mins,updated,c,ini2};
+  }).sort((a,b)=>b.mins-a.mins);
+
+  tbody.innerHTML=rows.map(({memberName,mins,updated,c,ini2})=>
+    '<tr>'
+    +'<td><div style="display:flex;align-items:center;gap:8px"><div class="av" style="background:'+c+'">'+ini2+'</div><span style="font-weight:500">'+memberName+'</span></div></td>'
+    +'<td style="font-family:var(--fm);font-size:13px;color:var(--ac2);font-weight:500">'+(mins?fmtMinsAtt(mins):'—')+'</td>'
+    +'<td style="font-size:12px;color:var(--m)">'+updated+'</td>'
+    +'</tr>'
+  ).join('');
+}
+
+function selectAttMonth(m){attSelectedMonth=m;renderAdminAtt();}
+
+function exportAdminAttCSV(){
+  const rows=[['Člen','Měsíc','Odpracováno']];
+  Object.entries(attSummaries).forEach(([,{memberName,summary}])=>{
+    Object.entries(summary).sort().forEach(([month,mins])=>{
+      rows.push([memberName,month,fmtMinsAtt(mins)]);
+    });
+  });
+  const csv=rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n');
+  Object.assign(document.createElement('a'),{href:URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'})),download:'primetime-dochazka-'+new Date().toISOString().slice(0,10)+'.csv'}).click();
 }
 
 init();
