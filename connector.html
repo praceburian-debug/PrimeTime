@@ -83,9 +83,9 @@ TrelloPowerUp.initialize({
     }];
   },
 
-  // board-buttons — admin vidí plný report, tracker vidí svůj report + indikátor časovače
+  // board-buttons
   'board-buttons':async(t)=>{
-    const[admin,allowed,mid]=await Promise.all([isAdmin(t),canTrack(t),getMid(t)]);
+    const[admin,allowed]=await Promise.all([isAdmin(t),canTrack(t)]);
     if(!allowed&&!admin)return[];
     const buttons=[];
     if(admin){
@@ -95,31 +95,41 @@ TrelloPowerUp.initialize({
         callback:(t)=>t.modal({title:'PrimeTime – Report',url:'./report.html',fullscreen:true}),
       });
     }
-    // Zjisti jestli tracker má někde běžící časovač
-    // Hledáme přes member private storage — klíče tt-running-*
-    // Trello neumožňuje wildcard search, takže uložíme activní cardId
-    const activeCard=await t.get('member','private','pt-active-card');
-    let runningText=null;
-    if(activeCard){
-      const running=await t.get('member','private','tt-running-'+activeCard);
+    // Zkontroluj běžící časovač
+    const activeData=await t.get('member','private','pt-active-card');
+    const activeCardId=activeData?.cardId||null;
+    let isRunning=false;
+    let runningLabel='Můj report';
+    if(activeCardId){
+      const running=await t.get('member','private','tt-running-'+activeCardId);
       if(running?.startedAt){
+        isRunning=true;
         const secs=Math.floor((Date.now()-running.startedAt)/1000);
         const h=Math.floor(secs/3600);
         const m=Math.floor((secs%3600)/60);
         const s=secs%60;
-        runningText=h>0
-          ?'● '+h+'h '+String(m).padStart(2,'0')+'m běží'
-          :'● '+m+':'+String(s).padStart(2,'0')+' běží';
+        const timeStr=h>0?h+'h '+String(m).padStart(2,'0')+'m':m+':'+String(s).padStart(2,'0');
+        const name=activeData?.cardName?(' — '+activeData.cardName):'';
+        runningLabel='● '+timeStr+name;
       }
     }
-    // Tlačítko Můj report — s indikátorem pokud běží časovač
+    // Osobní report
     buttons.push({
       icon:ICON_CLOCK,
-      text:runningText||'Můj report',
-      condition:runningText?'always':undefined,
+      text:'Můj report',
       callback:(t)=>t.modal({title:'PrimeTime – Můj report',url:'./report-tracker.html',fullscreen:true}),
-      refresh:runningText?10:undefined,
     });
+    // Tlačítko běžícího časovače — otevře trackovanou kartu v novém tabu
+    if(isRunning&&activeData?.shortLink){
+      buttons.push({
+        icon:ICON_TIMER,
+        text:runningLabel,
+        callback:()=>{
+          window.open('https://trello.com/c/'+activeData.shortLink,'_blank');
+        },
+        refresh:10,
+      });
+    }
     return buttons;
   },
 

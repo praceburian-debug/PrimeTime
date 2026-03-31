@@ -193,14 +193,19 @@ async function init(){
 
 async function startTimer(){
   await api.set('member','private','tt-running-'+cardId,{startedAt:Date.now()-tsecs*1000});
-  await api.set('member','private','pt-active-card',cardId);
+  // Uložíme cardId + shortLink pro navigaci z board-buttons
+  const sl=IN_TRELLO?(await _t.card('shortLink')).shortLink:'';
+  await api.set('member','private','pt-active-card',{cardId,shortLink:sl,cardName});
   tint=setInterval(()=>{tsecs++;document.getElementById('clock').textContent=fmtS(tsecs);},1000);
   document.getElementById('clock').classList.add('r');
   document.getElementById('csub').innerHTML='<span class="rdot"></span>Časovač běží…';
   document.getElementById('btn-s').classList.add('h');document.getElementById('btn-stop').classList.remove('h');document.getElementById('btn-r').disabled=true;
 }
 function resumeTimer(){
-  api.set('member','private','pt-active-card',cardId);
+  // Obnov pt-active-card se shortLink pokud chybí
+  if(IN_TRELLO)_t.card('shortLink').then(r=>{
+    api.set('member','private','pt-active-card',{cardId,shortLink:r.shortLink,cardName});
+  }).catch(()=>api.set('member','private','pt-active-card',{cardId,shortLink:'',cardName}));
   document.getElementById('clock').textContent=fmtS(tsecs);document.getElementById('clock').classList.add('r');
   document.getElementById('csub').innerHTML='<span class="rdot"></span>Časovač běží…';
   document.getElementById('btn-s').classList.add('h');document.getElementById('btn-stop').classList.remove('h');document.getElementById('btn-r').disabled=true;
