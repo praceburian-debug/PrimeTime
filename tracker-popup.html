@@ -193,12 +193,14 @@ async function init(){
 
 async function startTimer(){
   await api.set('member','private','tt-running-'+cardId,{startedAt:Date.now()-tsecs*1000});
+  await api.set('member','private','pt-active-card',cardId);
   tint=setInterval(()=>{tsecs++;document.getElementById('clock').textContent=fmtS(tsecs);},1000);
   document.getElementById('clock').classList.add('r');
   document.getElementById('csub').innerHTML='<span class="rdot"></span>Časovač běží…';
   document.getElementById('btn-s').classList.add('h');document.getElementById('btn-stop').classList.remove('h');document.getElementById('btn-r').disabled=true;
 }
 function resumeTimer(){
+  api.set('member','private','pt-active-card',cardId);
   document.getElementById('clock').textContent=fmtS(tsecs);document.getElementById('clock').classList.add('r');
   document.getElementById('csub').innerHTML='<span class="rdot"></span>Časovač běží…';
   document.getElementById('btn-s').classList.add('h');document.getElementById('btn-stop').classList.remove('h');document.getElementById('btn-r').disabled=true;
@@ -207,6 +209,7 @@ function resumeTimer(){
 async function stopTimer(){
   clearInterval(tint);
   await api.remove('member','private','tt-running-'+cardId);
+  await api.remove('member','private','pt-active-card');
   const mins=Math.max(1,Math.round(tsecs/60));
   await saveLog(mins,'');
   document.getElementById('clock').classList.remove('r');

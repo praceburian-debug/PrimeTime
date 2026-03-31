@@ -83,9 +83,9 @@ TrelloPowerUp.initialize({
     }];
   },
 
-  // board-buttons — admin vidí plný report, tracker vidí svůj report
+  // board-buttons — admin vidí plný report, tracker vidí svůj report + indikátor časovače
   'board-buttons':async(t)=>{
-    const[admin,allowed]=await Promise.all([isAdmin(t),canTrack(t)]);
+    const[admin,allowed,mid]=await Promise.all([isAdmin(t),canTrack(t),getMid(t)]);
     if(!allowed&&!admin)return[];
     const buttons=[];
     if(admin){
@@ -95,11 +95,30 @@ TrelloPowerUp.initialize({
         callback:(t)=>t.modal({title:'PrimeTime – Report',url:'./report.html',fullscreen:true}),
       });
     }
-    // Tracker (i admin) vidí svůj osobní report
+    // Zjisti jestli tracker má někde běžící časovač
+    // Hledáme přes member private storage — klíče tt-running-*
+    // Trello neumožňuje wildcard search, takže uložíme activní cardId
+    const activeCard=await t.get('member','private','pt-active-card');
+    let runningText=null;
+    if(activeCard){
+      const running=await t.get('member','private','tt-running-'+activeCard);
+      if(running?.startedAt){
+        const secs=Math.floor((Date.now()-running.startedAt)/1000);
+        const h=Math.floor(secs/3600);
+        const m=Math.floor((secs%3600)/60);
+        const s=secs%60;
+        runningText=h>0
+          ?'● '+h+'h '+String(m).padStart(2,'0')+'m běží'
+          :'● '+m+':'+String(s).padStart(2,'0')+' běží';
+      }
+    }
+    // Tlačítko Můj report — s indikátorem pokud běží časovač
     buttons.push({
       icon:ICON_CLOCK,
-      text:'Můj report',
+      text:runningText||'Můj report',
+      condition:runningText?'always':undefined,
       callback:(t)=>t.modal({title:'PrimeTime – Můj report',url:'./report-tracker.html',fullscreen:true}),
+      refresh:runningText?10:undefined,
     });
     return buttons;
   },
