@@ -19,7 +19,7 @@
   .fb:hover:not(.a){background:var(--s3);color:var(--txt);}
   .eb{padding:5px 14px;border-radius:7px;border:1px solid var(--b2);background:transparent;color:var(--m);font-size:12px;font-family:var(--f);cursor:pointer;transition:all .15s;}
   .eb:hover{background:var(--s2);color:var(--txt);}
-  .bsel{font-family:var(--f);font-size:12px;background:var(--s2);border:1px solid var(--b2);color:var(--txt);border-radius:7px;padding:5px 10px;cursor:pointer;outline:none;max-width:200px;}
+  
   /* Custom picker */
   .custom-wrap{position:relative;}
   #custom-picker{display:none;position:absolute;top:calc(100% + 8px);right:0;background:var(--s);border:1px solid var(--b2);border-radius:12px;padding:16px;z-index:200;width:256px;box-shadow:0 12px 40px rgba(0,0,0,0.55);}
@@ -178,15 +178,28 @@
       <div class="sc"><div class="sla">Aktivní členové</div><div class="sv" id="s3">—</div><div class="ss">přispívají</div></div>
       <div class="sc"><div class="sla">Nejaktivnější</div><div class="sv" id="s4" style="font-size:18px;margin-top:8px">—</div><div class="ss" id="s4b">—</div></div>
     </div>
-    <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--b);margin-bottom:1.25rem;">
-      <div class="tabs" style="border-bottom:none;margin-bottom:0;">
-        <button class="tab a" onclick="setTab('m',this)">Podle členů</button>
-        <button class="tab" onclick="setTab('c',this)">Podle karet</button>
-        <button class="tab" onclick="setTab('l',this)">Detailní log</button>
-      </div>
-      <select class="bsel" id="f-board" onchange="switchBoard(this.value)" style="display:block;margin-right:0;"></select>
+    <div class="tabs">
+      <button class="tab a" id="tab-btn-b" onclick="setTab('b',this)">Podle nástěnek</button>
+      <button class="tab" id="tab-btn-m" onclick="setTab('m',this)">Podle členů</button>
+      <button class="tab" id="tab-btn-c" onclick="setTab('c',this)">Podle karet</button>
+      <button class="tab" id="tab-btn-l" onclick="setTab('l',this)">Detailní log</button>
     </div>
-    <div id="tab-m">
+    <div id="tab-b">
+      <div class="tw" style="margin-bottom:1.25rem;">
+        <table>
+          <thead><tr>
+            <th>Nástěnka</th>
+            <th>Záznamy</th>
+            <th>Členové</th>
+            <th>Karty</th>
+            <th>Celkem</th>
+            <th>Průběh</th>
+          </tr></thead>
+          <tbody id="tb-b"></tbody>
+        </table>
+      </div>
+    </div>
+    <div id="tab-m" style="display:none;">
       <div class="bw">
         <div class="bc"><div class="bt">Čas podle členů</div><div id="mb"></div></div>
         <div class="bc"><div class="bt">Top karty</div><div id="cb"></div></div>
@@ -284,10 +297,7 @@ async function init(){
       if(l.cardLabels&&l.cardLabels.length)cardLbls[l.cardId]=l.cardLabels;
       if(l.boardName&&!allBoards.find(b=>b.id===l.boardId))allBoards.push({id:l.boardId,name:l.boardName});
     });
-    // Board filter — zobraz vždy
-    const sel=document.getElementById('f-board');
-    sel.innerHTML='<option value="">Všechny nástěnky</option>'+allBoards.map(b=>'<option value="'+b.id+'">'+b.name+'</option>').join('');
-    sel.style.display='block'; // Vždy zobraz
+    // allBoards naplněny — dropdown není potřeba (filtr je přes záložky)
     document.getElementById('pl').style.display='none';
     document.getElementById('ct').style.display='block';
     renderAll();
@@ -311,7 +321,7 @@ async function switchBoard(boardId){
 
 function renderAll(){
   const l=byP(allLogs);
-  rS(l);rM(l);rC(l);rDD(l);rLog();
+  rS(l);rB(l);rM(l);rC(l);rDD(l);rLog();
   // Naplň dropdown sloupců ze všech logů
   const lists=[...new Set(allLogs.map(lg=>lg.listName).filter(Boolean))].sort();
   const fsel=document.getElementById('f-list');
@@ -443,6 +453,41 @@ function rC(logs){
   document.getElementById('tb-c').innerHTML=Object.entries(cm).sort((a,b)=>b[1]-a[1]).map(([id,m])=>{const avs=[...cw[id]||[]].map(w=>{const[mid,mn]=w.split('|');const c=mc(mid);return'<div class="av" style="background:'+c+';width:22px;height:22px;font-size:9px;margin-right:-4px">'+ini(mn)+'</div>';}).join('');const p=Math.round((m/max)*100),n=cardNames[id]||id,lbls=cardLbls[id]||[];return'<tr><td><div class="tdm"><div class="dot" style="background:var(--ac)"></div><span style="font-weight:500">'+n+'</span></div></td><td>'+rL(lbls)+'</td><td><div style="display:flex">'+avs+'</div></td><td class="tm">'+fmtHM(m)+'</td><td><div class="pb" style="width:90px"><div class="pf" style="width:'+p+'%"></div></div></td></tr>';}).join('')||'<tr><td colspan="5" class="empty">Žádná data</td></tr>';
 }
 
+function rB(logs){
+  const bm={},bc={},bw={},bn={};
+  logs.forEach(l=>{
+    bm[l.boardId]=(bm[l.boardId]||0)+l.mins;
+    bc[l.boardId]=(bc[l.boardId]||new Set()).add(l.memberId)||bc[l.boardId];
+    bw[l.boardId]=(bw[l.boardId]||new Set()).add(l.cardId)||bw[l.boardId];
+    bn[l.boardId]=l.boardName||l.boardId;
+  });
+  // Fix — Set.add vrací Set, přepíšeme správně
+  const bcMap={},bwMap={};
+  logs.forEach(l=>{
+    if(!bcMap[l.boardId])bcMap[l.boardId]=new Set();
+    bcMap[l.boardId].add(l.memberId);
+    if(!bwMap[l.boardId])bwMap[l.boardId]=new Set();
+    bwMap[l.boardId].add(l.cardId);
+  });
+  const tot=logs.reduce((s,l)=>s+l.mins,0);
+  const max=Math.max(...Object.values(bm),1);
+  document.getElementById('tb-b').innerHTML=Object.entries(bm).sort((a,b2)=>b2[1]-a[1]).map(([id,m])=>{
+    const cnt=logs.filter(l=>l.boardId===id).length;
+    const members=bcMap[id]?.size||0;
+    const cards=bwMap[id]?.size||0;
+    const p=Math.round((m/max)*100);
+    const pct=tot>0?Math.round((m/tot)*100):0;
+    return'<tr>'
+      +'<td><div class="tdm"><div class="dot" style="background:'+boardColor(id)+'"></div><span style="font-weight:500">'+bn[id]+'</span></div></td>'
+      +'<td class="mc">'+cnt+'</td>'
+      +'<td class="mc">'+members+'</td>'
+      +'<td class="mc">'+cards+'</td>'
+      +'<td class="tm">'+fmtHM(m)+'</td>'
+      +'<td><div style="display:flex;align-items:center;gap:8px"><div class="pb"><div class="pf" style="width:'+p+'%;background:'+boardColor(id)+'"></div></div><span class="mc">'+pct+'%</span></div></td>'
+      +'</tr>';
+  }).join('')||'<tr><td colspan="6" class="empty">Žádná data</td></tr>';
+}
+
 function rDD(logs){
   // Nástěnky
   const bs=document.getElementById('fb2'),bv=bs.value;
@@ -558,7 +603,7 @@ function togglePicker(btn){const picker=document.getElementById('custom-picker')
 function closePicker(){document.getElementById('custom-picker').classList.remove('open');if(period!=='custom')document.getElementById('btn-custom').classList.remove('a');}
 function applyCustom(){customFrom=document.getElementById('cp-from').value;customTo=document.getElementById('cp-to').value;if(!customFrom&&!customTo){closePicker();return;}period='custom';document.querySelectorAll('.fb').forEach(b=>b.classList.remove('a'));document.getElementById('btn-custom').classList.add('a');const label=customFrom&&customTo?customFrom.slice(5)+' – '+customTo.slice(5):customFrom||customTo;document.getElementById('btn-custom').textContent=label;closePicker();renderAll();}
 document.addEventListener('click',e=>{const w=document.querySelector('.custom-wrap');if(w&&!w.contains(e.target))closePicker();});
-function setTab(tab,btn){document.querySelectorAll('.tab').forEach(b=>b.classList.remove('a'));btn.classList.add('a');['m','c','l'].forEach(n=>document.getElementById('tab-'+n).style.display=n===tab?'block':'none');}
+function setTab(tab,btn){document.querySelectorAll('.tab').forEach(b=>b.classList.remove('a'));btn.classList.add('a');['b','m','c','l'].forEach(n=>document.getElementById('tab-'+n).style.display=n===tab?'block':'none');}
 
 function exportCSV(){
   let logs=byP(allLogs);if(lf.m)logs=logs.filter(l=>l.memberId===lf.m);if(lf.c)logs=logs.filter(l=>l.cardId===lf.c);if(lf.l)logs=logs.filter(l=>gL(l).some(lb=>lb.name===lf.l));if(lf.d)logs=logs.filter(l=>(l.desc||'').toLowerCase().includes(lf.d));if(lf.f)logs=logs.filter(l=>l.date>=lf.f);if(lf.t)logs=logs.filter(l=>l.date<=lf.t);
