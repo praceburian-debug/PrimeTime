@@ -94,8 +94,8 @@
 <div class="topbar">
   <div class="logo"><div class="logo-i">⏱</div>Prime<span>Time</span><span style="font-size:12px;color:var(--m);font-family:var(--f);font-weight:400;margin-left:4px">Můj report</span></div>
   <div class="tr">
-    <button class="fb a" id="btn-week" onclick="setPeriod('week',this)">Tento týden</button>
-    <button class="fb" id="btn-today" onclick="setPeriod('today',this)">Dnes</button>
+    <button class="fb" id="btn-week" onclick="setPeriod('week',this)">Tento týden</button>
+    <button class="fb a" id="btn-today" onclick="setPeriod('today',this)">Dnes</button>
     <button class="fb" id="btn-month" onclick="setPeriod('month',this)">Tento měsíc</button>
     <button class="fb" id="btn-all" onclick="setPeriod('all',this)">Vše</button>
     <div class="custom-wrap">
@@ -152,7 +152,7 @@ const COLS=['#6C5CE7','#00B894','#E17055','#0984E3','#FDCB6E','#A29BFE','#D63031
 function mc(id){let h=0;for(const c of String(id))h=(h*31+c.charCodeAt(0))&0xffffffff;return COLS[Math.abs(h)%COLS.length];}
 function ini(n){const p=(n||'?').trim().split(' ');return(p[0][0]+(p[1]?.[0]||'')).toUpperCase();}
 function fmtHM(m){const h=Math.floor(m/60),mm=m%60;return h>0?h+'h '+mm+'m':mm+'m';}
-let allLogs=[],memberId=null,memberName='',period='week',customFrom='',customTo='';
+let allLogs=[],memberId=null,memberName='',period='today',customFrom='',customTo='';
 let openGroups={};
 
 function byP(logs){
