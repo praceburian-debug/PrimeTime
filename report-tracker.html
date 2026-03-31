@@ -429,13 +429,14 @@ function renderAtt(){
   tbody.innerHTML=sorted.map(r=>{
     const mins=attMins(r);
     const incomplete=r.arrival&&!r.departure;
+    const id=r.id;
     return'<tr>'
-      +'<td class="att-cell" onclick="attEdit(this,''+r.id+'','date')">'+r.date+'</td>'
-      +'<td class="att-cell" onclick="attEdit(this,''+r.id+'','arrival')">'+( r.arrival||'—')+'</td>'
-      +'<td class="att-cell" onclick="attEdit(this,''+r.id+'','departure')">'+(r.departure||( incomplete?'<span style="color:#FDCB6E;font-size:11px">probíhá…</span>':'—'))+'</td>'
-      +'<td class="att-cell" onclick="attEdit(this,''+r.id+'','lunch')">'+(r.lunch?r.lunch+' min':'—')+'</td>'
+      +'<td class="att-cell" onclick="attEdit(this,\''+id+'\',\'date\')">'+r.date+'</td>'
+      +'<td class="att-cell" onclick="attEdit(this,\''+id+'\',\'arrival\')">'+(r.arrival||'—')+'</td>'
+      +'<td class="att-cell" onclick="attEdit(this,\''+id+'\',\'departure\')">'+(r.departure||(incomplete?'<span style="color:#FDCB6E;font-size:11px">probíhá…</span>':'—'))+'</td>'
+      +'<td class="att-cell" onclick="attEdit(this,\''+id+'\',\'lunch\')">'+(r.lunch?r.lunch+' min':'—')+'</td>'
       +'<td class="att-total">'+fmtMins(mins)+'</td>'
-      +'<td><button class="att-del" onclick="delAtt(''+r.id+'')" title="Smazat">×</button></td>'
+      +'<td><button class="att-del" onclick="delAtt(\''+id+'\')" title="Smazat">×</button></td>'
       +'</tr>';
   }).join('');
   // Součet

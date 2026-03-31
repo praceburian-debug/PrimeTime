@@ -35,7 +35,7 @@ TrelloPowerUp.initialize({
     const[card,board]=await Promise.all([t.card('id'),t.board('id')]);
     try{
       // Nejdřív zkus cache — rychlé
-      const res=await fetch(`${BACKEND}/api/logs/total?cardId=${card.id}`);
+      const res=await fetch(`${BACKEND}/api/logs-total?cardId=${card.id}`);
       const{total=0}=await res.json();
       if(total>0)return[{icon:ICON_CLOCK,text:fmtHM(total),color:'purple'}];
       // Cache miss — fallback na plný výpočet (staré záznamy bez cache)

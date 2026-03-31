@@ -647,7 +647,7 @@ function renderAdminAtt(){
   // Month pills
   const pills=document.getElementById('att-month-pills');
   if(pills){
-    pills.innerHTML=sortedMonths.map(m=>'<span class="att-month-pill'+(m===attSelectedMonth?' a':'')+'" onclick="selectAttMonth(''+m+'')">'
+    pills.innerHTML=sortedMonths.map(m=>'<span class="att-month-pill'+(m===attSelectedMonth?' a':'')+'" onclick="selectAttMonth(\'' +m+ '\')">'
       +new Date(m+'-01').toLocaleDateString('cs-CZ',{month:'long',year:'numeric'})+'</span>').join('');
   }
 
