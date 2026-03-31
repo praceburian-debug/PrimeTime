@@ -19,7 +19,7 @@
   .fb:hover:not(.a){background:var(--s3);color:var(--txt);}
   .eb{padding:5px 14px;border-radius:7px;border:1px solid var(--b2);background:transparent;color:var(--m);font-size:12px;font-family:var(--f);cursor:pointer;transition:all .15s;}
   .eb:hover{background:var(--s2);color:var(--txt);}
-  .bsel{font-family:var(--f);font-size:12px;background:var(--s2);border:1px solid var(--b2);color:var(--txt);border-radius:7px;padding:5px 10px;cursor:pointer;outline:none;display:none;}
+  .bsel{font-family:var(--f);font-size:12px;background:var(--s2);border:1px solid var(--b2);color:var(--txt);border-radius:7px;padding:5px 10px;cursor:pointer;outline:none;max-width:200px;}
   /* Custom picker */
   .custom-wrap{position:relative;}
   #custom-picker{display:none;position:absolute;top:calc(100% + 8px);right:0;background:var(--s);border:1px solid var(--b2);border-radius:12px;padding:16px;z-index:200;width:256px;box-shadow:0 12px 40px rgba(0,0,0,0.55);}
@@ -71,7 +71,7 @@
   .btime{font-family:var(--fm);font-size:11px;color:var(--ac2);}
   .bbg{height:5px;background:var(--s3);border-radius:5px;overflow:hidden;}
   .bf{height:100%;border-radius:5px;transition:width .5s;}
-  .lf{display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto;gap:8px;align-items:end;padding:14px 1.25rem;background:var(--s2);border-bottom:1px solid var(--b);}
+  .lf{display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr auto;gap:8px;align-items:end;padding:14px 1.25rem;background:var(--s2);border-bottom:1px solid var(--b);}
   .lg{display:flex;flex-direction:column;gap:4px;}
   .ll{font-size:10px;color:var(--m);text-transform:uppercase;letter-spacing:.07em;font-weight:500;}
   .inp{font-family:var(--f);font-size:12px;background:var(--bg);border:1px solid var(--b2);border-radius:7px;padding:7px 10px;color:var(--txt);outline:none;width:100%;}
@@ -149,7 +149,6 @@
 <div class="topbar">
   <div class="logo"><div class="logo-i">⏱</div>Prime<span>Time</span><span style="font-size:12px;color:var(--m);font-family:var(--f);font-weight:400;margin-left:4px">Report</span></div>
   <div class="tr">
-    <select class="bsel" id="f-board" onchange="switchBoard(this.value)"></select>
     <button class="fb" id="btn-week" onclick="setPeriod('week',this)">Tento týden</button>
     <button class="fb" id="btn-today" onclick="setPeriod('today',this)">Dnes</button>
     <button class="fb a" id="btn-month" onclick="setPeriod('month',this)">Tento měsíc</button>
@@ -179,10 +178,13 @@
       <div class="sc"><div class="sla">Aktivní členové</div><div class="sv" id="s3">—</div><div class="ss">přispívají</div></div>
       <div class="sc"><div class="sla">Nejaktivnější</div><div class="sv" id="s4" style="font-size:18px;margin-top:8px">—</div><div class="ss" id="s4b">—</div></div>
     </div>
-    <div class="tabs">
-      <button class="tab a" onclick="setTab('m',this)">Podle členů</button>
-      <button class="tab" onclick="setTab('c',this)">Podle karet</button>
-      <button class="tab" onclick="setTab('l',this)">Detailní log</button>
+    <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--b);margin-bottom:1.25rem;">
+      <div class="tabs" style="border-bottom:none;margin-bottom:0;">
+        <button class="tab a" onclick="setTab('m',this)">Podle členů</button>
+        <button class="tab" onclick="setTab('c',this)">Podle karet</button>
+        <button class="tab" onclick="setTab('l',this)">Detailní log</button>
+      </div>
+      <select class="bsel" id="f-board" onchange="switchBoard(this.value)" style="display:block;margin-right:0;"></select>
     </div>
     <div id="tab-m">
       <div class="bw">
@@ -207,6 +209,7 @@
     <div id="tab-l" style="display:none">
       <div class="tw">
         <div class="lf">
+          <div class="lg"><span class="ll">Nástěnka</span><select class="inp" id="fb2" onchange="af()"><option value="">Všechny</option></select></div>
           <div class="lg"><span class="ll">Člen</span><select class="inp" id="fm" onchange="af()"><option value="">Všichni</option></select></div>
           <div class="lg"><span class="ll">Karta</span><select class="inp" id="fc" onchange="af()"><option value="">Všechny</option></select></div>
           <div class="lg"><span class="ll">Štítek</span><select class="inp" id="fl" onchange="af()"><option value="">Všechny štítky</option></select></div>
@@ -230,11 +233,11 @@ function lh(c){return LH[c]||'#888';}
 function rL(labels){if(!labels||!labels.length)return'<span style="color:var(--m);font-size:12px">—</span>';return'<div class="lc">'+labels.map(l=>'<span class="lp" style="background:'+lh(l.color)+'">'+(l.name||'')+'</span>').join('')+'</div>';}
 const IN_TRELLO=(()=>{try{return window.self!==window.top&&typeof TrelloPowerUp!=='undefined';}catch(e){return false;}})();
 const MOCK=[
-  {id:'l1',memberId:'m1',memberName:'Jakub Novák',boardId:'b1',boardName:'Klient A',cardId:'c1',cardName:'Redesign homepage',cardLabels:[{name:'Design',color:'purple'},{name:'Q2',color:'green'}],listName:'Probíhá',mins:90,desc:'Wireframy',date:'2026-03-28'},
-  {id:'l2',memberId:'m1',memberName:'Jakub Novák',boardId:'b1',boardName:'Klient A',cardId:'c1',cardName:'Redesign homepage',cardLabels:[{name:'Design',color:'purple'}],listName:'Probíhá',mins:135,desc:'Hero sekce',date:'2026-03-28'},
-  {id:'l3',memberId:'m2',memberName:'Tereza Dvořák',boardId:'b1',boardName:'Klient A',cardId:'c2',cardName:'API Stripe',cardLabels:[{name:'Backend',color:'blue'}],listName:'Probíhá',mins:180,desc:'OAuth flow',date:'2026-03-27'},
-  {id:'l4',memberId:'m3',memberName:'Marek Svoboda',boardId:'b2',boardName:'Klient B',cardId:'c3',cardName:'Bug #342',cardLabels:[{name:'Bug',color:'red'}],listName:'Hotovo',mins:75,desc:'Debug',date:'2026-03-26'},
-  {id:'l5',memberId:'m1',memberName:'Jakub Novák',boardId:'b2',boardName:'Klient B',cardId:'c4',cardName:'Teambuilding',cardLabels:[{name:'Socials',color:'blue'}],listName:'Probíhá',mins:45,desc:'Email koordinace',date:'2026-03-28'},
+  {id:'l1',memberId:'m1',memberName:'Jakub Novák',boardId:'b1',boardName:'Klient A',cardId:'c1',cardName:'Redesign homepage',cardLabels:[{name:'Design',color:'purple'},{name:'Q2',color:'green'}],listName:'Probíhá',mins:90,desc:'Wireframy',date:'2026-03-31'},
+  {id:'l2',memberId:'m1',memberName:'Jakub Novák',boardId:'b1',boardName:'Klient A',cardId:'c1',cardName:'Redesign homepage',cardLabels:[{name:'Design',color:'purple'}],listName:'Probíhá',mins:135,desc:'Hero sekce',date:'2026-03-31'},
+  {id:'l3',memberId:'m2',memberName:'Tereza Dvořák',boardId:'b1',boardName:'Klient A',cardId:'c2',cardName:'API Stripe',cardLabels:[{name:'Backend',color:'blue'}],listName:'Probíhá',mins:180,desc:'OAuth flow',date:'2026-03-28'},
+  {id:'l4',memberId:'m3',memberName:'Marek Svoboda',boardId:'b2',boardName:'Klient B',cardId:'c3',cardName:'Bug #342',cardLabels:[{name:'Bug',color:'red'}],listName:'Hotovo',mins:75,desc:'Debug',date:'2026-03-11'},
+  {id:'l5',memberId:'m1',memberName:'Jakub Novák',boardId:'b2',boardName:'Klient B',cardId:'c4',cardName:'Teambuilding',cardLabels:[{name:'Socials',color:'blue'}],listName:'Probíhá',mins:45,desc:'Email koordinace',date:'2026-03-31'},
 ];
 let _t=null;if(IN_TRELLO)_t=TrelloPowerUp.iframe({appKey:'e4d8502325aff04bbe003d7c3eea4acf',appName:'PrimeTime'});
 const COLS=['#6C5CE7','#00B894','#E17055','#0984E3','#FDCB6E','#A29BFE','#D63031','#00CEC9'];
@@ -244,7 +247,7 @@ function fmtHM(m){const h=Math.floor(m/60),mm=m%60;return h>0?h+'h '+mm+'m':mm+'
 
 let allLogs=[],cardNames={},cardLbls={},period='month',customFrom='',customTo='';
 let currentBoardId=null,allBoards=[];
-let lf={m:'',c:'',l:'',d:'',f:'',t:''};
+let lf={b:'',m:'',c:'',l:'',d:'',f:'',t:''};
 let openGroups={};
 
 function byP(logs){
@@ -281,12 +284,10 @@ async function init(){
       if(l.cardLabels&&l.cardLabels.length)cardLbls[l.cardId]=l.cardLabels;
       if(l.boardName&&!allBoards.find(b=>b.id===l.boardId))allBoards.push({id:l.boardId,name:l.boardName});
     });
-    // Board filter — zobraz jen pokud máme >1 nástěnku
-    if(allBoards.length>1){
-      const sel=document.getElementById('f-board');
-      sel.innerHTML='<option value="">Všechny nástěnky</option>'+allBoards.map(b=>'<option value="'+b.id+'"'+(b.id===currentBoardId?' selected':'')+'>'+b.name+'</option>').join('');
-      sel.style.display='block';
-    }
+    // Board filter — zobraz vždy
+    const sel=document.getElementById('f-board');
+    sel.innerHTML='<option value="">Všechny nástěnky</option>'+allBoards.map(b=>'<option value="'+b.id+'">'+b.name+'</option>').join('');
+    sel.style.display='block'; // Vždy zobraz
     document.getElementById('pl').style.display='none';
     document.getElementById('ct').style.display='block';
     renderAll();
@@ -311,13 +312,16 @@ async function switchBoard(boardId){
 function renderAll(){
   const l=byP(allLogs);
   rS(l);rM(l);rC(l);rDD(l);rLog();
-  // Naplň dropdown sloupců
+  // Naplň dropdown sloupců ze všech logů
   const lists=[...new Set(allLogs.map(lg=>lg.listName).filter(Boolean))].sort();
-  const sel=document.getElementById('f-list');
-  if(sel){
-    const cur=sel.value;
-    sel.innerHTML='<option value="">Všechny sloupce</option>'+lists.map(n=>'<option value="'+n+'"'+(n===cur?' selected':'')+'>'+n+'</option>').join('');
-    sel.value=cur;
+  const fsel=document.getElementById('f-list');
+  if(fsel){
+    const cur=fsel.value;
+    fsel.innerHTML='<option value="">Všechny sloupce</option>'+lists.map(n=>'<option value="'+n+'"'+(n===cur?' selected':'')+'>'+n+'</option>').join('');
+    fsel.value=cur;
+    // Zobraz řádek jen pokud máme data
+    const frow=document.getElementById('list-filter-row');
+    if(frow)frow.style.display=lists.length>0?'flex':'none';
   }
   rPie(l);
 }
@@ -440,18 +444,22 @@ function rC(logs){
 }
 
 function rDD(logs){
+  // Nástěnky
+  const bs=document.getElementById('fb2'),bv=bs.value;
+  bs.innerHTML='<option value="">Všechny</option>'+[...new Map(allLogs.map(l=>[l.boardId,l.boardName||l.boardId])).entries()].sort((a,b)=>a[1].localeCompare(b[1])).map(([id,n])=>'<option value="'+id+'">'+n+'</option>').join('');bs.value=bv;
   const ms=document.getElementById('fm'),mv=ms.value;ms.innerHTML='<option value="">Všichni</option>'+[...new Map(logs.map(l=>[l.memberId,l.memberName])).entries()].sort((a,b)=>a[1].localeCompare(b[1])).map(([id,n])=>'<option value="'+id+'">'+n+'</option>').join('');ms.value=mv;
   const cs=document.getElementById('fc'),cv=cs.value;cs.innerHTML='<option value="">Všechny</option>'+[...new Map(logs.map(l=>[l.cardId,cardNames[l.cardId]||l.cardId])).entries()].sort((a,b)=>a[1].localeCompare(b[1])).map(([id,n])=>'<option value="'+id+'">'+n+'</option>').join('');cs.value=cv;
   const lset=new Map();logs.forEach(l=>(l.cardLabels||[]).forEach(lb=>{if(lb.name)lset.set(lb.name,lb.color);}));
   const ls2=document.getElementById('fl'),lv=ls2.value;ls2.innerHTML='<option value="">Všechny štítky</option>'+[...lset.entries()].sort((a,b)=>a[0].localeCompare(b[0])).map(([n])=>'<option value="'+n+'">'+n+'</option>').join('');ls2.value=lv;
 }
 
-function af(){lf.m=document.getElementById('fm').value;lf.c=document.getElementById('fc').value;lf.l=document.getElementById('fl').value;lf.d=document.getElementById('fd').value.trim().toLowerCase();lf.f=document.getElementById('ff').value;lf.t=document.getElementById('ft').value;rLog();}
-function cf(){lf={m:'',c:'',l:'',d:'',f:'',t:''};['fm','fc','fl'].forEach(id=>document.getElementById(id).value='');document.getElementById('fd').value='';document.getElementById('ff').value='';document.getElementById('ft').value='';rLog();}
-function co(k){lf[k]='';const map={m:'fm',c:'fc',l:'fl',d:'fd',f:'ff',t:'ft'};if(map[k])document.getElementById(map[k]).value='';rLog();}
+function af(){lf.b=document.getElementById('fb2').value;lf.m=document.getElementById('fm').value;lf.c=document.getElementById('fc').value;lf.l=document.getElementById('fl').value;lf.d=document.getElementById('fd').value.trim().toLowerCase();lf.f=document.getElementById('ff').value;lf.t=document.getElementById('ft').value;rLog();}
+function cf(){lf={b:'',m:'',c:'',l:'',d:'',f:'',t:''};['fb2','fm','fc','fl'].forEach(id=>document.getElementById(id).value='');document.getElementById('fd').value='';document.getElementById('ff').value='';document.getElementById('ft').value='';rLog();}
+function co(k){lf[k]='';const map={b:'fb2',m:'fm',c:'fc',l:'fl',d:'fd',f:'ff',t:'ft'};if(map[k])document.getElementById(map[k]).value='';rLog();}
 
 function rLog(){
   let logs=byP(allLogs);
+  if(lf.b)logs=logs.filter(l=>l.boardId===lf.b);
   if(lf.m)logs=logs.filter(l=>l.memberId===lf.m);
   if(lf.c)logs=logs.filter(l=>l.cardId===lf.c);
   if(lf.l)logs=logs.filter(l=>gL(l).some(lb=>lb.name===lf.l));
@@ -459,6 +467,7 @@ function rLog(){
   if(lf.f)logs=logs.filter(l=>l.date>=lf.f);
   if(lf.t)logs=logs.filter(l=>l.date<=lf.t);
   const tags=[];
+  if(lf.b){const o=[...document.getElementById('fb2').options].find(o=>o.value===lf.b);tags.push({k:'b',l:'Nástěnka: '+(o?.text||lf.b)});}
   if(lf.m){const o=[...document.getElementById('fm').options].find(o=>o.value===lf.m);tags.push({k:'m',l:'Člen: '+(o?.text||lf.m)});}
   if(lf.c){const o=[...document.getElementById('fc').options].find(o=>o.value===lf.c);tags.push({k:'c',l:'Karta: '+(o?.text||lf.c)});}
   if(lf.l)tags.push({k:'l',l:'Štítek: '+lf.l});if(lf.d)tags.push({k:'d',l:'Popis: "'+lf.d+'"'});
