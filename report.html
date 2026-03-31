@@ -263,7 +263,9 @@ function gN(log){return cardNames[log.cardId]||log.cardName||log.cardId;}
 
 async function fetchLogs(boardId){
   if(!IN_TRELLO)return MOCK;
-  const bId=boardId||currentBoardId;
+  // Bez parametru = ALL (všechny nástěnky kde je admin členem)
+  // S parametrem = konkrétní nástěnka (z dropdown filtru)
+  const bId=boardId||'ALL';
   const res=await fetch(`${BACKEND}/api/logs?boardId=${bId}`);
   const{logs=[]}=await res.json();
   return logs;
@@ -298,7 +300,7 @@ async function init(){
 async function switchBoard(boardId){
   document.getElementById('pl').style.display='flex';
   document.getElementById('ct').style.display='none';
-  const logs=await fetchLogs(boardId||currentBoardId);
+  const logs=await fetchLogs(boardId||'ALL');
   allLogs=logs;cardNames={};cardLbls={};
   logs.forEach(l=>{if(l.cardName)cardNames[l.cardId]=l.cardName;if(l.cardLabels&&l.cardLabels.length)cardLbls[l.cardId]=l.cardLabels;});
   document.getElementById('pl').style.display='none';
