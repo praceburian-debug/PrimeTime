@@ -7,22 +7,18 @@
 <style>
   @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@600;700&family=Inter:wght@400;500;600&display=swap');
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-  :root{--bg:#0D0D0F;--s:#16161A;--s2:#1E1E24;--s3:#26262E;--b:rgba(255,255,255,0.08);--b2:rgba(255,255,255,0.14);--txt:#F0EFE8;--m:#7A7A88;--ac:#6C5CE7;--ac2:#A29BFE;--gr:#00B894;--f:'Inter',sans-serif;--fh:'Syne',sans-serif;--fm:'DM Mono',monospace;}
+  :root{--bg:#0D0D0F;--s:#16161A;--s2:#1E1E24;--s3:#26262E;--b:rgba(255,255,255,0.08);--b2:rgba(255,255,255,0.14);--txt:#F0EFE8;--m:#7A7A88;--ac:#6C5CE7;--ac2:#A29BFE;--f:'Inter',sans-serif;--fh:'Syne',sans-serif;--fm:'DM Mono',monospace;}
   html,body{font-family:var(--f);background:var(--bg);color:var(--txt);min-height:100vh;}
-
-  /* Topbar */
   .topbar{display:flex;align-items:center;justify-content:space-between;padding:0 2rem;height:52px;border-bottom:1px solid var(--b);background:var(--s);position:sticky;top:0;z-index:20;}
   .logo{font-family:var(--fh);font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px;}
   .logo-i{width:24px;height:24px;background:var(--ac);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;}
   .logo span{color:var(--ac2);}
-  .topbar-r{display:flex;align-items:center;gap:8px;}
+  .tr{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
   .fb{padding:5px 14px;border-radius:7px;border:1px solid var(--b2);background:var(--s2);color:var(--m);font-size:12px;font-family:var(--f);cursor:pointer;transition:all .15s;font-weight:500;}
   .fb.a{background:var(--ac);color:white;border-color:var(--ac);}
   .fb:hover:not(.a){background:var(--s3);color:var(--txt);}
   .eb{padding:5px 14px;border-radius:7px;border:1px solid var(--b2);background:transparent;color:var(--m);font-size:12px;font-family:var(--f);cursor:pointer;transition:all .15s;}
   .eb:hover{background:var(--s2);color:var(--txt);}
-
-  /* Custom picker */
   .custom-wrap{position:relative;}
   #custom-picker{display:none;position:absolute;top:calc(100% + 8px);right:0;background:var(--s);border:1px solid var(--b2);border-radius:12px;padding:16px;z-index:200;width:256px;box-shadow:0 12px 40px rgba(0,0,0,0.55);}
   #custom-picker.open{display:block;}
@@ -37,17 +33,12 @@
   .cp-apply:hover{background:#7C6AF0;}
   .cp-cancel{padding:8px 12px;background:transparent;color:var(--m);border:1px solid var(--b2);border-radius:7px;font-size:12px;font-family:var(--f);cursor:pointer;}
   .cp-cancel:hover{background:var(--s2);color:var(--txt);}
-
   .mn{padding:1.5rem 2rem;max-width:900px;margin:0 auto;}
-
-  /* Member chip */
   .member-header{display:flex;align-items:center;gap:12px;margin-bottom:1.5rem;padding:1rem 1.25rem;background:var(--s);border:1px solid var(--b);border-radius:12px;}
   .mav{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600;color:white;flex-shrink:0;}
   .minfo{flex:1;}
   .mname{font-size:15px;font-weight:600;}
   .mrole{font-size:12px;color:var(--m);margin-top:2px;}
-
-  /* Stats */
   .sg{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.5rem;}
   .sc{background:var(--s);border:1px solid var(--b);border-radius:12px;padding:1rem 1.25rem;}
   .sc.ac{background:rgba(108,92,231,.08);border-color:rgba(108,92,231,.2);}
@@ -55,8 +46,6 @@
   .sv{font-family:var(--fm);font-size:26px;font-weight:500;margin:6px 0 2px;}
   .sc.ac .sv{color:var(--ac2);}
   .ss{font-size:11px;color:var(--m);}
-
-  /* Nástěnky bary */
   .boards-card{background:var(--s);border:1px solid var(--b);border-radius:12px;padding:1.25rem;margin-bottom:1.5rem;}
   .bc-title{font-family:var(--fh);font-size:14px;font-weight:600;margin-bottom:1rem;}
   .bi{margin-bottom:10px;}
@@ -65,25 +54,20 @@
   .btime{font-family:var(--fm);font-size:11px;color:var(--ac2);}
   .bbg{height:5px;background:var(--s3);border-radius:5px;overflow:hidden;}
   .bf{height:100%;border-radius:5px;transition:width .5s;}
-
-  /* Grouped log */
   .tw{background:var(--s);border:1px solid var(--b);border-radius:12px;overflow:hidden;margin-bottom:1.5rem;}
   .tw-title{font-family:var(--fh);font-size:14px;font-weight:600;padding:1rem 1.25rem;border-bottom:1px solid var(--b);background:var(--s2);}
-
   .group-row{display:flex;align-items:center;gap:10px;padding:11px 1.25rem;border-bottom:1px solid var(--b);cursor:pointer;background:var(--s);transition:background .12s;user-select:none;}
   .group-row:hover{background:var(--s2);}
   .group-row.open{background:rgba(108,92,231,.06);}
-  .chev{width:16px;height:16px;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:var(--m);font-size:11px;transition:transform .2s;}
+  .chev{width:16px;height:16px;flex-shrink:0;color:var(--m);font-size:11px;transition:transform .2s;display:flex;align-items:center;justify-content:center;}
   .group-row.open .chev{transform:rotate(90deg);}
   .g-name{flex:1;min-width:0;}
   .g-title{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .g-meta{font-size:11px;color:var(--m);margin-top:2px;display:flex;align-items:center;gap:6px;}
+  .g-meta{font-size:11px;color:var(--m);margin-top:2px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
   .g-board{font-size:10px;color:var(--ac2);background:rgba(108,92,231,.12);padding:1px 6px;border-radius:4px;}
   .g-time{font-family:var(--fm);font-size:13px;color:var(--ac2);font-weight:500;flex-shrink:0;}
-
   .group-body{display:none;background:var(--s2);border-bottom:1px solid var(--b);}
   .group-body.open{display:block;}
-
   .entry-row{display:flex;align-items:center;gap:10px;padding:8px 1.25rem 8px 2.5rem;border-bottom:1px solid var(--b);font-size:12px;transition:background .1s;}
   .entry-row:last-child{border-bottom:none;}
   .entry-row:hover{background:var(--s3);}
@@ -93,16 +77,11 @@
   .e-meta{font-size:10px;color:var(--m);margin-top:2px;}
   .e-time{font-family:var(--fm);font-size:11px;color:var(--ac2);flex-shrink:0;font-weight:500;cursor:text;}
   .e-time:hover{color:var(--ac);}
-
-  /* Inline editace */
   .r-edit-desc{font-family:var(--f);font-size:11px;background:var(--bg);border:1px solid var(--ac);border-radius:4px;padding:2px 5px;color:var(--txt);outline:none;width:100%;}
   .r-edit-time{font-family:var(--fm);font-size:10px;background:var(--bg);border:1px solid var(--ac);border-radius:4px;padding:2px 3px;color:var(--txt);outline:none;width:28px;text-align:center;-moz-appearance:textfield;}
   .r-edit-time::-webkit-inner-spin-button,.r-edit-time::-webkit-outer-spin-button{-webkit-appearance:none;}
   .r-edit-sep{color:var(--m);font-size:10px;font-family:var(--fm);}
-  .lc{display:flex;flex-wrap:wrap;gap:4px;}
   .lp{font-size:10px;font-weight:600;padding:2px 7px;border-radius:20px;color:white;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;}
-
-  /* Loading */
   .pl{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;gap:16px;}
   .sp{width:32px;height:32px;border:2px solid var(--b2);border-top-color:var(--ac);border-radius:50%;animation:spin .8s linear infinite;}
   @keyframes spin{to{transform:rotate(360deg);}}
@@ -114,10 +93,11 @@
 <body>
 <div class="topbar">
   <div class="logo"><div class="logo-i">⏱</div>Prime<span>Time</span><span style="font-size:12px;color:var(--m);font-family:var(--f);font-weight:400;margin-left:4px">Můj report</span></div>
-  <div class="topbar-r">
-    <button class="fb a" onclick="setPeriod('week',this)">Tento týden</button>
-    <button class="fb" onclick="setPeriod('month',this)">Tento měsíc</button>
-    <button class="fb" onclick="setPeriod('all',this)">Vše</button>
+  <div class="tr">
+    <button class="fb a" id="btn-week" onclick="setPeriod('week',this)">Tento týden</button>
+    <button class="fb" id="btn-today" onclick="setPeriod('today',this)">Dnes</button>
+    <button class="fb" id="btn-month" onclick="setPeriod('month',this)">Tento měsíc</button>
+    <button class="fb" id="btn-all" onclick="setPeriod('all',this)">Vše</button>
     <div class="custom-wrap">
       <button class="fb" id="btn-custom" onclick="togglePicker(this)">Vlastní</button>
       <div id="custom-picker">
@@ -133,13 +113,10 @@
     <button class="eb" onclick="exportCSV()">⬇ CSV</button>
   </div>
 </div>
-
 <div class="mn">
   <div id="pl" class="pl"><div class="sp"></div><div class="lt2">Načítám záznamy…</div></div>
   <div id="ct" style="display:none">
     <div id="er" class="erbox" style="display:none"></div>
-
-    <!-- Member chip -->
     <div class="member-header">
       <div class="mav" id="m-av">?</div>
       <div class="minfo">
@@ -147,55 +124,40 @@
         <div class="mrole">Zobrazuji pouze tvoje záznamy napříč všemi nástěnkami</div>
       </div>
     </div>
-
-    <!-- Stats -->
     <div class="sg">
       <div class="sc ac"><div class="sla">Celkový čas</div><div class="sv" id="s1">—</div><div class="ss" id="s1b">—</div></div>
       <div class="sc"><div class="sla">Záznamy</div><div class="sv" id="s2">—</div><div class="ss">celkem</div></div>
       <div class="sc"><div class="sla">Nástěnky</div><div class="sv" id="s3">—</div><div class="ss">aktivní</div></div>
     </div>
-
-    <!-- Čas podle nástěnek -->
-    <div class="boards-card" id="boards-card">
-      <div class="bc-title">Čas podle nástěnek</div>
-      <div id="board-bars"></div>
-    </div>
-
-    <!-- Grouped log -->
+    <div class="boards-card"><div class="bc-title">Čas podle nástěnek</div><div id="board-bars"></div></div>
     <div class="tw">
       <div class="tw-title">Záznamy podle karet</div>
       <div id="grouped-log"></div>
     </div>
   </div>
 </div>
-
 <script>
-const BACKEND = 'https://prime-time.vercel.app';
+const BACKEND='https://prime-time.vercel.app';
 const IN_TRELLO=(()=>{try{return window.self!==window.top&&typeof TrelloPowerUp!=='undefined';}catch(e){return false;}})();
-
 const LH={green:'#61BD4F',yellow:'#F2D600',orange:'#FF9F1A',red:'#EB5A46',purple:'#C377E0',blue:'#0079BF',sky:'#00C2E0',lime:'#51E898',pink:'#FF78CB',black:'#344563',green_dark:'#519839',yellow_dark:'#D9B51C',orange_dark:'#D79B00',red_dark:'#B04632',purple_dark:'#89609E',blue_dark:'#055A8C',sky_dark:'#0098C7',lime_dark:'#4BBF6B',pink_dark:'#C9558F',black_dark:'#091E42',green_light:'#B7DDB0',yellow_light:'#F5EA92',orange_light:'#FAD29C',red_light:'#EFB3AB',purple_light:'#DFC0EB',blue_light:'#9AD0ED',sky_light:'#76D6ED',lime_light:'#B3F1D0',pink_light:'#F9C2E4',black_light:'#B6BFCE'};
 function lh(c){return LH[c]||'#888';}
-function rL(labels){if(!labels||!labels.length)return'';return'<div class="lc">'+labels.map(l=>'<span class="lp" style="background:'+lh(l.color)+'">'+(l.name||'')+'</span>').join('')+'</div>';}
-
-const MOCK_LOGS=[
-  {id:'l1',memberId:'m1',memberName:'Jakub Novák',boardId:'b1',boardName:'Klient A',cardId:'c1',cardName:'Redesign homepage',cardLabels:[{name:'Design',color:'purple'}],mins:90,desc:'Wireframy',date:'2026-03-24'},
-  {id:'l2',memberId:'m1',memberName:'Jakub Novák',boardId:'b1',boardName:'Klient A',cardId:'c1',cardName:'Redesign homepage',cardLabels:[{name:'Design',color:'purple'}],mins:135,desc:'Hero sekce',date:'2026-03-25'},
+const MOCK=[
+  {id:'l1',memberId:'m1',memberName:'Jakub Novák',boardId:'b1',boardName:'Klient A',cardId:'c1',cardName:'Redesign homepage',cardLabels:[{name:'Design',color:'purple'}],mins:90,desc:'Wireframy',date:'2026-03-28'},
+  {id:'l2',memberId:'m1',memberName:'Jakub Novák',boardId:'b1',boardName:'Klient A',cardId:'c1',cardName:'Redesign homepage',cardLabels:[{name:'Design',color:'purple'}],mins:135,desc:'Hero sekce',date:'2026-03-27'},
   {id:'l3',memberId:'m1',memberName:'Jakub Novák',boardId:'b2',boardName:'Klient B',cardId:'c2',cardName:'API integrace',cardLabels:[{name:'Backend',color:'blue'}],mins:180,desc:'OAuth flow',date:'2026-03-26'},
-  {id:'l4',memberId:'m1',memberName:'Jakub Novák',boardId:'b2',boardName:'Klient B',cardId:'c3',cardName:'Bug #342',cardLabels:[],mins:45,desc:'Debug',date:'2026-03-27'},
+  {id:'l4',memberId:'m1',memberName:'Jakub Novák',boardId:'b2',boardName:'Klient B',cardId:'c3',cardName:'Bug #342',cardLabels:[],mins:45,desc:'Debug',date:'2026-03-28'},
 ];
-
 let _t=null;if(IN_TRELLO)_t=TrelloPowerUp.iframe({appKey:'e4d8502325aff04bbe003d7c3eea4acf',appName:'PrimeTime'});
-
 const COLS=['#6C5CE7','#00B894','#E17055','#0984E3','#FDCB6E','#A29BFE','#D63031','#00CEC9'];
 function mc(id){let h=0;for(const c of String(id))h=(h*31+c.charCodeAt(0))&0xffffffff;return COLS[Math.abs(h)%COLS.length];}
 function ini(n){const p=(n||'?').trim().split(' ');return(p[0][0]+(p[1]?.[0]||'')).toUpperCase();}
 function fmtHM(m){const h=Math.floor(m/60),mm=m%60;return h>0?h+'h '+mm+'m':mm+'m';}
-
 let allLogs=[],memberId=null,memberName='',period='week',customFrom='',customTo='';
 let openGroups={};
 
 function byP(logs){
   if(period==='all')return logs;
+  if(period==='today'){const t=new Date().toISOString().slice(0,10);return logs.filter(l=>l.date===t);}
   if(period==='custom'){return logs.filter(l=>{if(customFrom&&l.date<customFrom)return false;if(customTo&&l.date>customTo)return false;return true;});}
   const now=new Date();
   return logs.filter(l=>{
@@ -208,30 +170,15 @@ function byP(logs){
 async function init(){
   try{
     let mId,mName;
-    if(IN_TRELLO){
-      const m=await _t.member('id','fullName');
-      mId=m.id;mName=m.fullName;
-    }else{
-      mId='m1';mName='Jakub Novák';
-    }
+    if(IN_TRELLO){const m=await _t.member('id','fullName');mId=m.id;mName=m.fullName;}
+    else{mId='m1';mName='Jakub Novák';}
     memberId=mId;memberName=mName;
-
-    // Nastav member chip
-    const av=document.getElementById('m-av');
-    av.textContent=ini(mName);av.style.background=mc(mId);
+    const av=document.getElementById('m-av');av.textContent=ini(mName);av.style.background=mc(mId);
     document.getElementById('m-name').textContent=mName;
-
-    // Načti všechny logy tohoto člena (cross-board)
     let logs;
-    if(IN_TRELLO){
-      const res=await fetch(`${BACKEND}/api/logs?boardId=ALL&memberId=${mId}`);
-      const data=await res.json();
-      logs=data.logs||[];
-    }else{
-      logs=MOCK_LOGS.filter(l=>l.memberId==='m1');
-    }
+    if(IN_TRELLO){const res=await fetch(`${BACKEND}/api/logs?boardId=ALL&memberId=${mId}`);const data=await res.json();logs=data.logs||[];}
+    else{logs=MOCK;}
     allLogs=logs;
-
     document.getElementById('pl').style.display='none';
     document.getElementById('ct').style.display='block';
     render();
@@ -244,57 +191,40 @@ async function init(){
 
 function render(){
   const logs=byP(allLogs);
-
-  // Stats
   const tot=logs.reduce((s,l)=>s+l.mins,0);
   document.getElementById('s1').textContent=fmtHM(tot);
   document.getElementById('s2').textContent=logs.length;
-  document.getElementById('s1b').textContent=period==='week'?'tento týden':period==='month'?'tento měsíc':period==='custom'?(customFrom&&customTo?customFrom.slice(5)+' – '+customTo.slice(5):'vlastní'):'celkem';
-  const boards=[...new Set(logs.map(l=>l.boardId))];
-  document.getElementById('s3').textContent=boards.length;
-
-  // Board bars
-  const bm={},bn={};
-  logs.forEach(l=>{bm[l.boardId]=(bm[l.boardId]||0)+l.mins;bn[l.boardId]=l.boardName||l.boardId;});
+  const lbl=period==='today'?'dnes':period==='week'?'tento týden':period==='month'?'tento měsíc':period==='custom'?(customFrom&&customTo?customFrom.slice(5)+' – '+customTo.slice(5):'vlastní'):'celkem';
+  document.getElementById('s1b').textContent=lbl;
+  document.getElementById('s3').textContent=[...new Set(logs.map(l=>l.boardId))].length;
+  const bm={},bn={};logs.forEach(l=>{bm[l.boardId]=(bm[l.boardId]||0)+l.mins;bn[l.boardId]=l.boardName||l.boardId;});
   const maxB=Math.max(...Object.values(bm),1);
-  document.getElementById('board-bars').innerHTML=Object.entries(bm).sort((a,b)=>b[1]-a[1]).map(([id,m])=>{
-    const p=Math.round((m/maxB)*100);
-    return'<div class="bi"><div class="br2"><div class="bn">'+bn[id]+'</div><div class="btime">'+fmtHM(m)+'</div></div><div class="bbg"><div class="bf" style="width:'+p+'%;background:var(--ac)"></div></div></div>';
-  }).join('')||'<div class="empty">Žádná data</div>';
-
-  // Grouped log
+  document.getElementById('board-bars').innerHTML=Object.entries(bm).sort((a,b)=>b[1]-a[1]).map(([id,m])=>{const p=Math.round((m/maxB)*100);return'<div class="bi"><div class="br2"><div class="bn">'+bn[id]+'</div><div class="btime">'+fmtHM(m)+'</div></div><div class="bbg"><div class="bf" style="width:'+p+'%;background:var(--ac)"></div></div></div>';}).join('')||'<div class="empty">Žádná data</div>';
   if(!logs.length){document.getElementById('grouped-log').innerHTML='<div class="empty">Žádné záznamy</div>';return;}
-
   const groups=new Map();
-  logs.forEach(l=>{const k=l.cardId;if(!groups.has(k))groups.set(k,[]);groups.get(k).push(l);});
+  logs.forEach(l=>{if(!groups.has(l.cardId))groups.set(l.cardId,[]);groups.get(l.cardId).push(l);});
   const sorted=[...groups.entries()].sort((a,b)=>b[1].reduce((s,l)=>s+l.mins,0)-a[1].reduce((s,l)=>s+l.mins,0));
-
   document.getElementById('grouped-log').innerHTML=sorted.map(([cardId,entries])=>{
     const totalMins=entries.reduce((s,l)=>s+l.mins,0);
-    const name=entries[0].cardName||cardId;
-    const boardName=entries[0].boardName||'';
-    const lbls=entries[0].cardLabels||[];
-    const isOpen=openGroups[cardId]||false;
-
+    const name=entries[0].cardName||cardId,boardName=entries[0].boardName||'';
+    const lbls=entries[0].cardLabels||[],isOpen=openGroups[cardId]||false;
     const entriesHtml=[...entries].sort((a,b)=>b.date.localeCompare(a.date)).map(l=>{
       const h=Math.floor(l.mins/60),m=l.mins%60;
       return'<div class="entry-row">'
         +'<div class="e-info">'
-          +'<div class="e-desc" onclick="rEditDesc(this,\''+l.id+'\')" title="Klikni pro editaci">'+(l.desc||'—')+'</div>'
+          +'<div class="e-desc" onclick="rEditDesc(this,\''+l.id+'\')">'+(l.desc||'—')+'</div>'
           +'<div class="e-meta">'+l.date+'</div>'
         +'</div>'
-        +'<div class="e-time" onclick="rEditTime(this,\''+l.id+'\','+h+','+m+')" title="Klikni pro editaci">'+fmtHM(l.mins)+'</div>'
+        +'<div class="e-time" onclick="rEditTime(this,\''+l.id+'\','+h+','+m+')">'+fmtHM(l.mins)+'</div>'
         +'</div>';
     }).join('');
-
     return'<div>'
       +'<div class="group-row'+(isOpen?' open':'')+'" onclick="toggleGroup(\''+cardId+'\',this)">'
         +'<span class="chev">▶</span>'
-        +'<div class="g-name">'
-          +'<div class="g-title">'+name+'</div>'
+        +'<div class="g-name"><div class="g-title">'+name+'</div>'
           +'<div class="g-meta">'
             +(boardName?'<span class="g-board">'+boardName+'</span>':'')
-            +(lbls.length?lbls.map(l=>'<span style="font-size:9px;font-weight:600;padding:1px 5px;border-radius:10px;background:'+lh(l.color)+';color:white">'+l.name+'</span>').join(''):'')
+            +(lbls.length?lbls.map(l=>'<span class="lp" style="background:'+lh(l.color)+'">'+l.name+'</span>').join(''):'')
             +'<span>'+entries.length+' zázn.</span>'
           +'</div>'
         +'</div>'
@@ -305,28 +235,23 @@ function render(){
   }).join('');
 }
 
-function toggleGroup(cardId,rowEl){
-  openGroups[cardId]=!openGroups[cardId];
-  rowEl.classList.toggle('open',openGroups[cardId]);
-  const body=document.getElementById('gb-'+cardId);
-  if(body)body.classList.toggle('open',openGroups[cardId]);
-}
+function toggleGroup(cardId,rowEl){openGroups[cardId]=!openGroups[cardId];rowEl.classList.toggle('open',openGroups[cardId]);const body=document.getElementById('gb-'+cardId);if(body)body.classList.toggle('open',openGroups[cardId]);}
 
-// ── Inline editace ────────────────────────────────────────
 function rEditDesc(el,logId){
   if(el.querySelector('input'))return;
   const orig=el.textContent==='—'?'':el.textContent;
   el.innerHTML='<input class="r-edit-desc" value="'+orig.replace(/"/g,'&quot;')+'">';
   const inp=el.querySelector('input');inp.focus();inp.select();
-  const done=async()=>{const val=inp.value.trim();el.textContent=val||'—';await rUpdate(logId,{desc:val});};
+  const done=async()=>{const val=inp.value.trim();el.textContent=val||'—';const idx=allLogs.findIndex(l=>l.id===logId);if(idx>=0)allLogs[idx].desc=val;await rUpdate(logId,{desc:val});};
   inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();inp.blur();}if(e.key==='Escape'){el.textContent=orig||'—';}});
   inp.addEventListener('blur',done,{once:true});
 }
 
 function rEditTime(el,logId,origH,origM){
   if(el.querySelector('input'))return;
-  el.innerHTML='<input class="r-edit-time" id="reh" type="number" min="0" max="99" value="'+origH+'"><span class="r-edit-sep">:</span><input class="r-edit-time" id="rem" type="number" min="0" max="59" value="'+String(origM).padStart(2,'0')+'">';
-  const ih=el.querySelector('#reh'),im=el.querySelector('#rem');
+  // data-r místo id — žádná kolize
+  el.innerHTML='<input class="r-edit-time" data-r="h" type="number" min="0" max="99" value="'+origH+'"><span class="r-edit-sep">:</span><input class="r-edit-time" data-r="m" type="number" min="0" max="59" value="'+String(origM).padStart(2,'0')+'">';
+  const ih=el.querySelector('[data-r="h"]'),im=el.querySelector('[data-r="m"]');
   ih.focus();ih.select();
   let saved=false;
   const done=async()=>{
@@ -335,44 +260,22 @@ function rEditTime(el,logId,origH,origM){
     const mins=h*60+m;
     if(mins<=0){el.textContent=fmtHM(origH*60+origM);return;}
     el.textContent=fmtHM(mins);
-    const idx=allLogs.findIndex(l=>l.id===logId);
-    if(idx>=0)allLogs[idx].mins=mins;
+    const idx=allLogs.findIndex(l=>l.id===logId);if(idx>=0)allLogs[idx].mins=mins;
     await rUpdate(logId,{mins});
   };
   const onKey=e=>{if(e.key==='Enter'){e.preventDefault();done();}if(e.key==='Escape'){saved=true;el.textContent=fmtHM(origH*60+origM);}};
   ih.addEventListener('keydown',onKey);im.addEventListener('keydown',onKey);
-  ih.addEventListener('blur',()=>setTimeout(done,120));im.addEventListener('blur',()=>setTimeout(done,120));
+  ih.addEventListener('blur',()=>setTimeout(done,150));im.addEventListener('blur',()=>setTimeout(done,150));
 }
 
 async function rUpdate(logId,changes){
-  await fetch(BACKEND+'/api/logs',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({logId,changes})});
+  if(IN_TRELLO)await fetch(BACKEND+'/api/logs',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({logId,changes})});
 }
 
-// ── Period + custom picker ────────────────────────────────
-function setPeriod(p,btn){
-  period=p;document.querySelectorAll('.fb').forEach(b=>b.classList.remove('a'));btn.classList.add('a');
-  document.getElementById('btn-custom').textContent='Vlastní';closePicker();render();
-}
-function togglePicker(btn){
-  const picker=document.getElementById('custom-picker');
-  if(picker.classList.contains('open')){closePicker();}
-  else{picker.classList.add('open');btn.classList.add('a');}
-}
-function closePicker(){
-  document.getElementById('custom-picker').classList.remove('open');
-  if(period!=='custom')document.getElementById('btn-custom').classList.remove('a');
-}
-function applyCustom(){
-  customFrom=document.getElementById('cp-from').value;
-  customTo=document.getElementById('cp-to').value;
-  if(!customFrom&&!customTo){closePicker();return;}
-  period='custom';
-  document.querySelectorAll('.fb').forEach(b=>b.classList.remove('a'));
-  document.getElementById('btn-custom').classList.add('a');
-  const label=customFrom&&customTo?customFrom.slice(5)+' – '+customTo.slice(5):customFrom||customTo;
-  document.getElementById('btn-custom').textContent=label;
-  closePicker();render();
-}
+function setPeriod(p,btn){period=p;document.querySelectorAll('.fb').forEach(b=>b.classList.remove('a'));btn.classList.add('a');document.getElementById('btn-custom').textContent='Vlastní';closePicker();render();}
+function togglePicker(btn){const picker=document.getElementById('custom-picker');if(picker.classList.contains('open')){closePicker();}else{picker.classList.add('open');btn.classList.add('a');}}
+function closePicker(){document.getElementById('custom-picker').classList.remove('open');if(period!=='custom')document.getElementById('btn-custom').classList.remove('a');}
+function applyCustom(){customFrom=document.getElementById('cp-from').value;customTo=document.getElementById('cp-to').value;if(!customFrom&&!customTo){closePicker();return;}period='custom';document.querySelectorAll('.fb').forEach(b=>b.classList.remove('a'));document.getElementById('btn-custom').classList.add('a');const label=customFrom&&customTo?customFrom.slice(5)+' – '+customTo.slice(5):customFrom||customTo;document.getElementById('btn-custom').textContent=label;closePicker();render();}
 document.addEventListener('click',e=>{const w=document.querySelector('.custom-wrap');if(w&&!w.contains(e.target))closePicker();});
 
 function exportCSV(){
