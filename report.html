@@ -124,13 +124,6 @@
   .lt2{font-size:13px;color:var(--m);}
   .empty{padding:2rem;text-align:center;color:var(--m);font-size:13px;}
   .erbox{background:rgba(214,48,49,.08);border:1px solid rgba(214,48,49,.2);border-radius:10px;padding:1rem 1.25rem;color:#FF7675;font-size:13px;margin-bottom:1rem;}
-  /* List filtr */
-  .list-filter{display:flex;align-items:center;gap:10px;margin-bottom:1.25rem;padding:10px 1.25rem;background:var(--s);border:1px solid var(--b);border-radius:10px;}
-  .list-filter-label{font-size:11px;color:var(--m);font-weight:500;white-space:nowrap;}
-  .list-filter select{font-family:var(--f);font-size:12px;background:var(--s2);border:1px solid var(--b2);color:var(--txt);border-radius:7px;padding:5px 10px;cursor:pointer;outline:none;flex:1;max-width:240px;}
-  .list-filter select:focus{border-color:var(--ac);}
-  .list-badge{font-size:11px;font-weight:500;padding:3px 10px;border-radius:6px;background:rgba(108,92,231,.15);color:var(--ac2);border:1px solid rgba(108,92,231,.25);}
-
   /* Pie sekce */
   .pie-section{margin-bottom:1.5rem;}
   .pie-title{font-family:var(--fh);font-size:14px;font-weight:600;margin-bottom:1rem;}
@@ -205,14 +198,9 @@
         <div class="bc"><div class="bt">Top karty</div><div id="cb"></div></div>
       </div>
       <div class="tw"><table><thead><tr><th>Člen</th><th>Záznamy</th><th>Celkem</th><th>Podíl</th></tr></thead><tbody id="tb-m"></tbody></table></div>
-      <!-- Filtr sloupce pro koláče -->
-      <div class="list-filter" id="list-filter-row">
-        <span class="list-filter-label">Filtr koláčů — sloupec:</span>
-        <select id="f-list" onchange="rPie(byP(allLogs))"><option value="">Všechny sloupce</option></select>
-      </div>
-      <!-- Koláčové grafy -->
+      <!-- Koláčové grafy — jen sloupec Probíhá -->
       <div class="pie-section" id="pie-section">
-        <div class="pie-title">Karty napříč nástěnkami</div>
+        <div class="pie-title">Probíhající karty napříč nástěnkami</div>
         <div class="pie-grid" id="pie-grid"></div>
       </div>
     </div>
@@ -322,30 +310,8 @@ async function switchBoard(boardId){
 function renderAll(){
   const l=byP(allLogs);
   rS(l);rB(l);rM(l);rC(l);rDD(l);rLog();
-  // Naplň dropdown sloupců ze všech logů
-  const lists=[...new Set(allLogs.map(lg=>lg.listName).filter(Boolean))].sort();
-  const fsel=document.getElementById('f-list');
-  if(fsel){
-    const cur=fsel.value;
-    fsel.innerHTML='<option value="">Všechny sloupce</option>'+lists.map(n=>'<option value="'+n+'"'+(n===cur?' selected':'')+'>'+n+'</option>').join('');
-    fsel.value=cur;
-    // Zobraz řádek jen pokud máme data
-    const frow=document.getElementById('list-filter-row');
-    if(frow)frow.style.display=lists.length>0?'flex':'none';
-  }
+  // Koláče filtrují jen 'Probíhá' — napevno v rPie
   rPie(l);
-}
-
-function updateListBadge(listName){
-  const row=document.getElementById('list-filter-row');
-  if(!row)return;
-  const old=row.querySelector('.list-badge');if(old)old.remove();
-  if(listName){
-    const badge=document.createElement('span');
-    badge.className='list-badge';
-    badge.textContent='Sloupec: '+listName;
-    row.appendChild(badge);
-  }
 }
 
 // ── Barvy nástěnek — konzistentní napříč grafy ──────────────
@@ -363,10 +329,9 @@ function rPie(logs){
   const grid=document.getElementById('pie-grid');
   if(!grid)return;
 
-  // Aplikuj filtr sloupce
-  const selList=document.getElementById('f-list');
-  const filterList=selList?selList.value:'';
-  const filteredLogs=filterList?logs.filter(l=>l.listName===filterList):logs;
+  // Vždy filtruj jen sloupec 'Probíhá'
+  const RUNNING_LIST='Probíhá';
+  const filteredLogs=logs.filter(l=>l.listName===RUNNING_LIST);
 
   // Seřad nástěnky pro konzistentní barvy
   const boards=[...new Set(filteredLogs.map(l=>l.boardId))];
@@ -382,12 +347,9 @@ function rPie(logs){
   });
 
   if(!memberMap.size){
-    grid.innerHTML='<div class="empty">'+(filterList?'Žádné karty ve sloupci "'+filterList+'"':'Žádná data')+'</div>';
-    // Zobraz badge s aktivním filtrem
-    updateListBadge(filterList);
+    grid.innerHTML='<div class="empty">Žádné probíhající karty — záznamy se sloupcem "Probíhá" se zobrazí po novém logování</div>';
     return;
   }
-  updateListBadge(filterList);
 
   grid.innerHTML='';
   for(const[memberId,data] of memberMap){
