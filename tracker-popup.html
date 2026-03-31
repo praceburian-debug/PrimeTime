@@ -312,13 +312,12 @@ function editTime(logId,origH,origM){
     if(mins<=0){el.textContent=fmtHM(origH*60+origM);return;}
     el.textContent=fmtHM(mins);
     await updateLog(logId,{mins});
-    // Refresh celkový čas
     await renderLog();
   };
   const onKey=e=>{if(e.key==='Enter'){e.preventDefault();done();}if(e.key==='Escape'){saved=true;el.textContent=fmtHM(origH*60+origM);}};
   ih.addEventListener('keydown',onKey);im.addEventListener('keydown',onKey);
-  ih.addEventListener('blur',()=>setTimeout(done,150));
-  im.addEventListener('blur',()=>setTimeout(done,150));
+  const onBlur=()=>setTimeout(()=>{if(!el.contains(document.activeElement))done();},50);
+  ih.addEventListener('blur',onBlur);im.addEventListener('blur',onBlur);
 }
 
 init();

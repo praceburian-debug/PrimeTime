@@ -387,7 +387,6 @@ function rEditDesc(el,logId){
 
 function rEditTime(el,logId,origH,origM){
   if(el.querySelector('input'))return;
-  // Použijeme data-r místo id — žádná kolize při více záznamech
   el.innerHTML='<input class="r-edit-time" data-r="h" type="number" min="0" max="99" value="'+origH+'"><span class="r-edit-sep">:</span><input class="r-edit-time" data-r="m" type="number" min="0" max="59" value="'+String(origM).padStart(2,'0')+'">';
   const ih=el.querySelector('[data-r="h"]'),im=el.querySelector('[data-r="m"]');
   ih.focus();ih.select();
@@ -403,7 +402,9 @@ function rEditTime(el,logId,origH,origM){
   };
   const onKey=e=>{if(e.key==='Enter'){e.preventDefault();done();}if(e.key==='Escape'){saved=true;el.textContent=fmtHM(origH*60+origM);}};
   ih.addEventListener('keydown',onKey);im.addEventListener('keydown',onKey);
-  ih.addEventListener('blur',()=>setTimeout(done,150));im.addEventListener('blur',()=>setTimeout(done,150));
+  // Blur — počkáme na next tick, pokud focus zůstal uvnitř el, nerušíme
+  const onBlur=()=>setTimeout(()=>{if(!el.contains(document.activeElement))done();},50);
+  ih.addEventListener('blur',onBlur);im.addEventListener('blur',onBlur);
 }
 
 async function rUpdateLog(logId,changes){
