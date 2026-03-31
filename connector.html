@@ -32,14 +32,11 @@ TrelloPowerUp.initialize({
   // card-badges — z backendu
   'card-badges':async(t)=>{
     if(!await canTrack(t))return[];
-    const card=await t.card('id');
+    const[card,board]=await Promise.all([t.card('id'),t.board('id')]);
     try{
-      const res=await fetch(`${BACKEND}/api/logs?boardId=_&cardId=${card.id}`);
-      // Použijeme card-total cache
-      const tot=await fetch(`${BACKEND}/api/logs?boardId=_&cardId=${card.id}`)
-        .then(r=>r.json())
-        .then(d=>(d.logs||[]).reduce((s,l)=>s+l.mins,0))
-        .catch(()=>0);
+      const res=await fetch(`${BACKEND}/api/logs?boardId=${board.id}&cardId=${card.id}`);
+      const{logs=[]}=await res.json();
+      const tot=logs.reduce((s,l)=>s+l.mins,0);
       if(!tot)return[];
       return[{icon:ICON_CLOCK,text:fmtHM(tot),color:'purple'}];
     }catch{return[];}

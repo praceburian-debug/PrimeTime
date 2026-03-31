@@ -295,7 +295,9 @@ function mc(id){let h=0;for(const c of String(id))h=(h*31+c.charCodeAt(0))&0xfff
 function ini(n){const p=(n||'?').trim().split(' ');return(p[0][0]+(p[1]?.[0]||'')).toUpperCase();}
 function fmtHM(m){const h=Math.floor(m/60),mm=m%60;return h>0?h+'h '+mm+'m':mm+'m';}
 
+const BACKEND='https://prime-time.vercel.app';
 let allLogs=[],cardNames={},cardLbls={},period='week',customFrom='',customTo='';
+let currentBoardId=null,allBoards=[];
 let lf={m:'',c:'',l:'',d:'',f:'',t:''};
 // Stav otevřených skupin — key = cardId, value = bool
 let openGroups={};

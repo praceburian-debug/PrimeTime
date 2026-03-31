@@ -219,7 +219,6 @@ async function stopTimer(){
   document.getElementById('clock').textContent='00:00:00';
   toast('✓ Zalogováno '+fmtHM(mins));
   await renderLog();
-  api.resize();
 }
 
 function resetTimer(){
