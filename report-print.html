@@ -325,12 +325,12 @@ function render(data){
 // Načti data ze sessionStorage
 window.addEventListener('DOMContentLoaded',()=>{
   try{
-    const raw=sessionStorage.getItem('pt-print-data');
-    if(!raw){
-      document.querySelector('.doc').innerHTML='<div style="padding:3rem;text-align:center;color:#6b7280">Žádná data. Otevři report v Trellu a klikni na tlačítko Tisk.</div>';
+    const hash=window.location.hash.slice(1);
+    if(!hash){
+      document.querySelector('.doc').innerHTML='<div style="padding:3rem;text-align:center;color:#6b7280">Žádná data. Otevři report v Trellu a klikni na tlačítko 🖨 Tisk.</div>';
       return;
     }
-    const data=JSON.parse(raw);
+    const data=JSON.parse(decodeURIComponent(escape(atob(hash))));
     render(data);
   }catch(e){
     document.querySelector('.doc').innerHTML='<div style="padding:3rem;text-align:center;color:#ef4444">Chyba: '+e.message+'</div>';

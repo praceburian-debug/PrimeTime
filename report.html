@@ -690,16 +690,15 @@ function exportAdminAttCSV(){
 
 
 function openPrint(){
-  // Předej data přes sessionStorage — bezpečné, stejný origin
   const logs=byP(allLogs);
   const printData={
-    period:period,
-    customFrom,customTo,
+    period,customFrom,customTo,
     generatedAt:new Date().toISOString(),
-    logs:logs,
+    logs,
   };
-  sessionStorage.setItem('pt-print-data',JSON.stringify(printData));
-  window.open('./report-print.html','_blank');
+  // Předej data přes URL hash jako base64 — funguje cross-origin
+  const b64=btoa(unescape(encodeURIComponent(JSON.stringify(printData))));
+  window.open('./report-print.html#'+b64,'_blank');
 }
 
 init();
