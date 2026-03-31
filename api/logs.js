@@ -42,8 +42,21 @@ async function getLogs(req, res) {
   let logIds = [];
 
   if (boardId === 'ALL' && memberId) {
+    // Tracker — logy konkrétního člena napříč všemi nástěnkami
     logIds = await redis.smembers(`member-logs:${memberId}`) || [];
+  } else if (boardId === 'ALL') {
+    // Admin — všechny nástěnky: načti všechny board-logs:* klíče
+    const keys = await redis.keys('board-logs:*');
+    if (keys && keys.length) {
+      const pipeBatch = redis.pipeline();
+      keys.forEach(k => pipeBatch.zrange(k, 0, -1, { rev: true }));
+      const results = await pipeBatch.exec();
+      const idSet = new Set();
+      results.forEach(r => { if (Array.isArray(r)) r.forEach(id => idSet.add(id)); });
+      logIds = [...idSet];
+    }
   } else {
+    // Konkrétní nástěnka
     logIds = await redis.zrange(`board-logs:${boardId}`, 0, -1, { rev: true }) || [];
   }
 
