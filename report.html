@@ -168,6 +168,7 @@
       </div>
     </div>
     <button class="eb" onclick="exportCSV()">⬇ CSV</button>
+    <button class="eb" onclick="openPrint()">🖨 Tisk</button>
   </div>
 </div>
 <div class="mn">
@@ -685,6 +686,20 @@ function exportAdminAttCSV(){
   });
   const csv=rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n');
   Object.assign(document.createElement('a'),{href:URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'})),download:'primetime-dochazka-'+new Date().toISOString().slice(0,10)+'.csv'}).click();
+}
+
+
+function openPrint(){
+  // Předej data přes sessionStorage — bezpečné, stejný origin
+  const logs=byP(allLogs);
+  const printData={
+    period:period,
+    customFrom,customTo,
+    generatedAt:new Date().toISOString(),
+    logs:logs,
+  };
+  sessionStorage.setItem('pt-print-data',JSON.stringify(printData));
+  window.open('./report-print.html','_blank');
 }
 
 init();

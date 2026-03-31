@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<title>PrimeTime – Report</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap');
+
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+
+  :root{
+    --ac:#6C5CE7;
+    --ac2:#A29BFE;
+    --txt:#1a1a2e;
+    --m:#6b7280;
+    --b:#e5e7eb;
+    --s:#f9fafb;
+    --f:'Inter',sans-serif;
+    --fm:'DM Mono',monospace;
+  }
+
+  html,body{
+    font-family:var(--f);
+    background:white;
+    color:var(--txt);
+    font-size:13px;
+    line-height:1.5;
+  }
+
+  /* ── Toolbar (jen na obrazovce, ne v tisku) ── */
+  .toolbar{
+    position:sticky;top:0;z-index:100;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:12px 2rem;
+    background:white;
+    border-bottom:1px solid var(--b);
+    box-shadow:0 1px 4px rgba(0,0,0,0.06);
+  }
+  .toolbar-left{display:flex;align-items:center;gap:12px;}
+  .toolbar-logo{font-size:16px;font-weight:700;color:var(--ac);}
+  .toolbar-period{font-size:13px;color:var(--m);}
+  .btn-print{
+    padding:8px 20px;background:var(--ac);color:white;
+    border:none;border-radius:7px;font-size:13px;font-weight:600;
+    font-family:var(--f);cursor:pointer;
+  }
+  .btn-print:hover{background:#5a4bd1;}
+
+  /* ── Dokument ── */
+  .doc{
+    max-width:900px;margin:0 auto;
+    padding:2rem;
+  }
+
+  /* Hlavička dokumentu */
+  .doc-header{
+    display:flex;align-items:flex-start;justify-content:space-between;
+    padding-bottom:1.5rem;
+    border-bottom:2px solid var(--ac);
+    margin-bottom:2rem;
+  }
+  .doc-logo{font-size:22px;font-weight:700;color:var(--ac);letter-spacing:-0.5px;}
+  .doc-logo span{color:var(--ac2);}
+  .doc-meta{text-align:right;}
+  .doc-meta .period{font-size:14px;font-weight:600;color:var(--txt);}
+  .doc-meta .generated{font-size:11px;color:var(--m);margin-top:3px;}
+
+  /* Statistiky */
+  .stats{
+    display:grid;grid-template-columns:repeat(3,1fr);
+    gap:1rem;margin-bottom:2rem;
+  }
+  .stat{
+    background:var(--s);border:1px solid var(--b);
+    border-radius:8px;padding:0.875rem 1rem;
+  }
+  .stat-label{font-size:10px;color:var(--m);text-transform:uppercase;letter-spacing:.06em;font-weight:600;}
+  .stat-value{font-family:var(--fm);font-size:22px;font-weight:500;margin-top:4px;color:var(--txt);}
+  .stat.accent{background:rgba(108,92,231,.06);border-color:rgba(108,92,231,.2);}
+  .stat.accent .stat-value{color:var(--ac);}
+
+  /* Sekce */
+  .section{margin-bottom:2rem;}
+  .section-title{
+    font-size:12px;font-weight:600;color:var(--m);
+    text-transform:uppercase;letter-spacing:.08em;
+    margin-bottom:0.75rem;
+    padding-bottom:0.5rem;
+    border-bottom:1px solid var(--b);
+  }
+
+  /* Čas podle členů — bary */
+  .member-bar{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+  .member-bar-name{width:140px;font-size:12px;font-weight:500;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .member-bar-track{flex:1;height:6px;background:var(--b);border-radius:3px;overflow:hidden;}
+  .member-bar-fill{height:100%;border-radius:3px;background:var(--ac);}
+  .member-bar-time{font-family:var(--fm);font-size:11px;color:var(--ac);width:60px;text-align:right;flex-shrink:0;}
+
+  /* Tabulka karet se seskupenými záznamy */
+  .cards-table{width:100%;border-collapse:collapse;font-size:12px;}
+  .cards-table th{
+    text-align:left;padding:7px 10px;
+    font-size:10px;color:var(--m);text-transform:uppercase;letter-spacing:.07em;font-weight:600;
+    background:var(--s);border-bottom:2px solid var(--b);
+  }
+  .cards-table th:last-child{text-align:right;}
+
+  /* Řádek karty — souhrnný */
+  .card-row td{
+    padding:9px 10px;
+    border-bottom:1px solid var(--b);
+    font-weight:600;font-size:13px;
+    background:white;
+  }
+  .card-row:hover td{background:var(--s);}
+  .card-name{display:flex;align-items:center;gap:6px;}
+  .card-dot{width:7px;height:7px;border-radius:50%;background:var(--ac);flex-shrink:0;}
+  .card-total{text-align:right;font-family:var(--fm);color:var(--ac);font-weight:600;}
+
+  /* Řádky popisů uvnitř karty */
+  .desc-row td{
+    padding:5px 10px 5px 26px;
+    border-bottom:1px solid #f3f4f6;
+    font-size:12px;color:var(--m);
+    background:#fafafa;
+  }
+  .desc-row:last-of-type td{border-bottom:1px solid var(--b);}
+  .desc-time{text-align:right;font-family:var(--fm);font-size:11px;color:#374151;}
+
+  /* Štítky */
+  .lp{font-size:9px;font-weight:600;padding:1px 6px;border-radius:10px;color:white;text-transform:uppercase;letter-spacing:.03em;}
+
+  /* Footer */
+  .doc-footer{
+    margin-top:2rem;padding-top:1rem;border-top:1px solid var(--b);
+    display:flex;justify-content:space-between;
+    font-size:11px;color:var(--m);
+  }
+
+  /* ── Print styly ── */
+  @media print{
+    .toolbar{display:none!important;}
+    body{font-size:11px;}
+    .doc{padding:0;max-width:100%;}
+    .doc-header{margin-bottom:1.5rem;padding-bottom:1rem;}
+    .stats{margin-bottom:1.5rem;}
+    .section{margin-bottom:1.5rem;}
+    .card-row td,.desc-row td{padding:5px 8px;}
+    /* Zabrání zalomení stránky uprostřed karty */
+    .card-group{page-break-inside:avoid;}
+    @page{margin:1.5cm;size:A4;}
+  }
+</style>
+</head>
+<body>
+
+<!-- Toolbar — jen na obrazovce -->
+<div class="toolbar">
+  <div class="toolbar-left">
+    <div class="toolbar-logo">PrimeTime</div>
+    <div class="toolbar-period" id="tb-period">—</div>
+  </div>
+  <button class="btn-print" onclick="window.print()">🖨 Tisknout / Uložit PDF</button>
+</div>
+
+<!-- Dokument -->
+<div class="doc">
+  <div class="doc-header">
+    <div>
+      <div class="doc-logo">Prime<span>Time</span> Report</div>
+    </div>
+    <div class="doc-meta">
+      <div class="period" id="doc-period">—</div>
+      <div class="generated" id="doc-generated">—</div>
+    </div>
+  </div>
+
+  <!-- Statistiky -->
+  <div class="stats">
+    <div class="stat accent">
+      <div class="stat-label">Celkový čas</div>
+      <div class="stat-value" id="p-tot">—</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Záznamy</div>
+      <div class="stat-value" id="p-cnt">—</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Aktivní členové</div>
+      <div class="stat-value" id="p-mbr">—</div>
+    </div>
+  </div>
+
+  <!-- Čas podle členů -->
+  <div class="section" id="members-section">
+    <div class="section-title">Čas podle členů</div>
+    <div id="p-members"></div>
+  </div>
+
+  <!-- Karty se seskupenými záznamy -->
+  <div class="section">
+    <div class="section-title">Záznamy podle karet</div>
+    <table class="cards-table">
+      <thead><tr>
+        <th>Karta / Popis</th>
+        <th>Štítky</th>
+        <th>Člen</th>
+        <th style="text-align:right">Čas</th>
+      </tr></thead>
+      <tbody id="p-cards"></tbody>
+    </table>
+  </div>
+
+  <div class="doc-footer">
+    <span>PrimeTime Power-Up</span>
+    <span id="footer-date">—</span>
+  </div>
+</div>
+
+<script>
+const LH={green:'#61BD4F',yellow:'#F2D600',orange:'#FF9F1A',red:'#EB5A46',purple:'#C377E0',blue:'#0079BF',sky:'#00C2E0',lime:'#51E898',pink:'#FF78CB',black:'#344563',green_dark:'#519839',yellow_dark:'#D9B51C',orange_dark:'#D79B00',red_dark:'#B04632',purple_dark:'#89609E',blue_dark:'#055A8C',sky_dark:'#0098C7',lime_dark:'#4BBF6B',pink_dark:'#C9558F',black_dark:'#091E42',green_light:'#B7DDB0',yellow_light:'#F5EA92',orange_light:'#FAD29C',red_light:'#EFB3AB',purple_light:'#DFC0EB',blue_light:'#9AD0ED',sky_light:'#76D6ED',lime_light:'#B3F1D0',pink_light:'#F9C2E4',black_light:'#B6BFCE'};
+function lh(c){return LH[c]||'#888';}
+
+const COLS=['#6C5CE7','#00B894','#E17055','#0984E3','#FDCB6E','#A29BFE','#D63031','#00CEC9'];
+function mc(id){let h=0;for(const c of String(id))h=(h*31+c.charCodeAt(0))&0xffffffff;return COLS[Math.abs(h)%COLS.length];}
+function ini(n){const p=(n||'?').trim().split(' ');return(p[0][0]+(p[1]?.[0]||'')).toUpperCase();}
+function fmtHM(m){const h=Math.floor(m/60),mm=m%60;return h>0?h+'h '+mm+'m':mm+'m';}
+
+function periodLabel(data){
+  if(data.period==='today')return'Dnes — '+new Date().toLocaleDateString('cs-CZ',{day:'numeric',month:'long',year:'numeric'});
+  if(data.period==='week')return'Tento týden';
+  if(data.period==='month')return'Tento měsíc — '+new Date().toLocaleDateString('cs-CZ',{month:'long',year:'numeric'});
+  if(data.period==='all')return'Všechny záznamy';
+  if(data.period==='custom'){
+    const f=data.customFrom?new Date(data.customFrom).toLocaleDateString('cs-CZ'):'';
+    const t=data.customTo?new Date(data.customTo).toLocaleDateString('cs-CZ'):'';
+    return f&&t?f+' – '+t:(f||t||'Vlastní rozmezí');
+  }
+  return'—';
+}
+
+function render(data){
+  const logs=data.logs||[];
+  const period=periodLabel(data);
+  const genDate=new Date(data.generatedAt).toLocaleString('cs-CZ',{day:'numeric',month:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit'});
+
+  // Header
+  document.getElementById('tb-period').textContent=period;
+  document.getElementById('doc-period').textContent=period;
+  document.getElementById('doc-generated').textContent='Vygenerováno '+genDate;
+  document.getElementById('footer-date').textContent=genDate;
+
+  // Statistiky
+  const tot=logs.reduce((s,l)=>s+l.mins,0);
+  document.getElementById('p-tot').textContent=fmtHM(tot);
+  document.getElementById('p-cnt').textContent=logs.length;
+  document.getElementById('p-mbr').textContent=[...new Set(logs.map(l=>l.memberId))].length;
+
+  // Čas podle členů — bary
+  const mm={},mn={};
+  logs.forEach(l=>{mm[l.memberId]=(mm[l.memberId]||0)+l.mins;mn[l.memberId]=l.memberName;});
+  const max=Math.max(...Object.values(mm),1);
+  document.getElementById('p-members').innerHTML=Object.entries(mm).sort((a,b)=>b[1]-a[1]).map(([id,m])=>{
+    const p=Math.round((m/max)*100);
+    const color=mc(id);
+    return`<div class="member-bar">
+      <div class="member-bar-name">${mn[id]}</div>
+      <div class="member-bar-track"><div class="member-bar-fill" style="width:${p}%;background:${color}"></div></div>
+      <div class="member-bar-time">${fmtHM(m)}</div>
+    </div>`;
+  }).join('');
+
+  // Karty — seskupit záznamy
+  // Struktura: karta → { desc → { members: Set, mins: number } }
+  const cardMap=new Map(); // cardId → { name, labels, descs: Map }
+  logs.forEach(l=>{
+    if(!cardMap.has(l.cardId)){
+      cardMap.set(l.cardId,{
+        name:l.cardName||l.cardId,
+        labels:l.cardLabels||[],
+        totalMins:0,
+        descs:new Map(), // desc → { mins, members: Set }
+      });
+    }
+    const card=cardMap.get(l.cardId);
+    card.totalMins+=l.mins;
+    const desc=l.desc||'—';
+    if(!card.descs.has(desc))card.descs.set(desc,{mins:0,members:new Set()});
+    const d=card.descs.get(desc);
+    d.mins+=l.mins;
+    d.members.add(l.memberName);
+  });
+
+  // Seřadit karty podle celkového času
+  const sortedCards=[...cardMap.entries()].sort((a,b)=>b[1].totalMins-a[1].totalMins);
+
+  const tbody=document.getElementById('p-cards');
+  tbody.innerHTML=sortedCards.map(([cardId,card])=>{
+    const lblHtml=card.labels.length
+      ?card.labels.map(l=>`<span class="lp" style="background:${lh(l.color)}">${l.name||''}</span>`).join(' ')
+      :'';
+
+    // Souhrnný řádek karty
+    const cardRow=`<tr class="card-row">
+      <td><div class="card-name"><span class="card-dot"></span><strong>${card.name}</strong></div></td>
+      <td>${lblHtml}</td>
+      <td style="color:var(--m);font-size:11px">${[...new Set(card.descs.values().map?.(()=>null)||[])].length||''}</td>
+      <td class="card-total">${fmtHM(card.totalMins)}</td>
+    </tr>`;
+
+    // Řádky popisů — seřazeno podle času sestupně
+    const descRows=[...card.descs.entries()]
+      .sort((a,b)=>b[1].mins-a[1].mins)
+      .map(([desc,{mins,members}])=>`<tr class="desc-row">
+        <td>${desc}</td>
+        <td></td>
+        <td style="font-size:11px;color:var(--m)">${[...members].join(', ')}</td>
+        <td class="desc-time">${fmtHM(mins)}</td>
+      </tr>`).join('');
+
+    return`<tbody class="card-group">${cardRow}${descRows}</tbody>`;
+  }).join('');
+}
+
+// Načti data ze sessionStorage
+window.addEventListener('DOMContentLoaded',()=>{
+  try{
+    const raw=sessionStorage.getItem('pt-print-data');
+    if(!raw){
+      document.querySelector('.doc').innerHTML='<div style="padding:3rem;text-align:center;color:#6b7280">Žádná data. Otevři report v Trellu a klikni na tlačítko Tisk.</div>';
+      return;
+    }
+    const data=JSON.parse(raw);
+    render(data);
+  }catch(e){
+    document.querySelector('.doc').innerHTML='<div style="padding:3rem;text-align:center;color:#ef4444">Chyba: '+e.message+'</div>';
+  }
+});
+</script>
+</body>
+</html>
