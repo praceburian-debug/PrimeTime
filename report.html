@@ -200,7 +200,7 @@
       <div class="tw"><table><thead><tr><th>Člen</th><th>Záznamy</th><th>Celkem</th><th>Podíl</th></tr></thead><tbody id="tb-m"></tbody></table></div>
       <!-- Koláčové grafy — jen sloupec Probíhá -->
       <div class="pie-section" id="pie-section">
-        <div class="pie-title">Probíhající karty napříč nástěnkami</div>
+        <div class="pie-title" id="pie-title">Karty napříč nástěnkami</div>
         <div class="pie-grid" id="pie-grid"></div>
       </div>
     </div>
@@ -329,9 +329,14 @@ function rPie(logs){
   const grid=document.getElementById('pie-grid');
   if(!grid)return;
 
-  // Vždy filtruj jen sloupec 'Probíhá'
+  // Filtruj sloupec 'Probíhá' — pokud žádný záznam listName nemá, zobraz vše
   const RUNNING_LIST='Probíhá';
-  const filteredLogs=logs.filter(l=>l.listName===RUNNING_LIST);
+  const hasListNames=logs.some(l=>l.listName);
+  const filteredLogs=hasListNames?logs.filter(l=>l.listName===RUNNING_LIST):logs;
+
+  // Nastav titulek sekce
+  const pt=document.getElementById('pie-title');
+  if(pt)pt.textContent=hasListNames?'Probíhající karty napříč nástěnkami':'Karty napříč nástěnkami';
 
   // Seřad nástěnky pro konzistentní barvy
   const boards=[...new Set(filteredLogs.map(l=>l.boardId))];
@@ -347,7 +352,7 @@ function rPie(logs){
   });
 
   if(!memberMap.size){
-    grid.innerHTML='<div class="empty">Žádné probíhající karty — záznamy se sloupcem "Probíhá" se zobrazí po novém logování</div>';
+    grid.innerHTML='<div class="empty">Žádná data pro zobrazení</div>';
     return;
   }
 
