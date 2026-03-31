@@ -57,7 +57,7 @@ TrelloPowerUp.initialize({
     }catch{}
 
     const isRun=!!(running?.startedAt);
-    const open=(t)=>t.popup({title:'PrimeTime',url:'./tracker-popup.html',height:600});
+    const open=(t)=>t.popup({title:'PrimeTime',url:'./tracker-popup.html',height:560});
     const badges=[];
     if(isRun){
       badges.push({title:'Časovač běží – klikni',text:'● '+fmtRun(running.startedAt),color:'green',icon:ICON_TIMER,callback:open,refresh:30});

@@ -143,7 +143,6 @@ const api={
   get:(s,v,k)=>{if(IN_TRELLO)return _t.get(s,v,k);return Promise.resolve(null);},
   set:(s,v,k,val)=>{if(IN_TRELLO)return _t.set(s,v,k,val);return Promise.resolve();},
   remove:(s,v,k)=>IN_TRELLO?_t.remove(s,v,k):Promise.resolve(),
-  resize:()=>{if(IN_TRELLO)_t.sizeTo(document.body).catch(()=>{});},
 };
 
 const COLS=['#6C5CE7','#00B894','#E17055','#0984E3','#FDCB6E','#A29BFE','#D63031','#00CEC9'];
@@ -179,10 +178,8 @@ async function init(){
     const run=await api.get('member','private','tt-running-'+cardId);
     if(run?.startedAt){tsecs=Math.floor((Date.now()-run.startedAt)/1000);resumeTimer();}
     await renderLog();
-    api.resize();
   }catch(e){
     document.getElementById('ls').innerHTML='<div class="empty" style="color:#FF7675">Chyba: '+e.message+'</div>';
-    api.resize();
   }
 }
 
