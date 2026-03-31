@@ -154,6 +154,7 @@ function toast(msg){const e=document.getElementById('toast');e.textContent=msg;e
 function genId(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
 
 let cardId=null,cardName='',cardLabels=[],member=null,isAdmin=false;
+let cardListName='';
 let boardId=null,boardName='';
 let tsecs=0,tint=null;
 
@@ -161,13 +162,20 @@ async function init(){
   if(!IN_TRELLO)document.getElementById('pb').classList.add('on');
   try{
     const[card,board,mbr,perms]=await Promise.all([
-      api.card('id','name','labels'),
+      api.card('id','name','labels','idList'),
       api.board('id','name'),
       api.member('id','fullName'),
       api.get('board','shared','tt-permissions'),
     ]);
     cardId=card.id;cardName=card.name;cardLabels=card.labels||[];
     boardId=board.id||'unknown';boardName=board.name||'Board';
+    // Načti název sloupce
+    try{
+      if(IN_TRELLO&&card.idList){
+        const list=await _t.list('name');
+        cardListName=list?.name||'';
+      }
+    }catch(e){cardListName='';}
     member=mbr;
     document.getElementById('cname').textContent=card.name;
     const lr=document.getElementById('lbls');
@@ -226,7 +234,7 @@ async function saveLog(mins,desc){
   if(IN_TRELLO){
     const res=await fetch(BACKEND+'/api/logs',{
       method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({memberId:member.id,memberName:member.fullName,boardId,boardName,cardId,cardName,cardLabels,mins,desc:desc||'',date:new Date().toISOString().slice(0,10)}),
+      body:JSON.stringify({memberId:member.id,memberName:member.fullName,boardId,boardName,cardId,cardName,cardLabels,listName:cardListName,mins,desc:desc||'',date:new Date().toISOString().slice(0,10)}),
     });
     if(!res.ok){const d=await res.json();throw new Error(d.error||'Chyba uložení');}
   }else{

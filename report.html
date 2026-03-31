@@ -124,6 +124,25 @@
   .lt2{font-size:13px;color:var(--m);}
   .empty{padding:2rem;text-align:center;color:var(--m);font-size:13px;}
   .erbox{background:rgba(214,48,49,.08);border:1px solid rgba(214,48,49,.2);border-radius:10px;padding:1rem 1.25rem;color:#FF7675;font-size:13px;margin-bottom:1rem;}
+  /* List filtr */
+  .list-filter{display:flex;align-items:center;gap:10px;margin-bottom:1.25rem;padding:10px 1.25rem;background:var(--s);border:1px solid var(--b);border-radius:10px;}
+  .list-filter-label{font-size:11px;color:var(--m);font-weight:500;white-space:nowrap;}
+  .list-filter select{font-family:var(--f);font-size:12px;background:var(--s2);border:1px solid var(--b2);color:var(--txt);border-radius:7px;padding:5px 10px;cursor:pointer;outline:none;flex:1;max-width:240px;}
+  .list-filter select:focus{border-color:var(--ac);}
+  .list-badge{font-size:11px;font-weight:500;padding:3px 10px;border-radius:6px;background:rgba(108,92,231,.15);color:var(--ac2);border:1px solid rgba(108,92,231,.25);}
+
+  /* Pie sekce */
+  .pie-section{margin-bottom:1.5rem;}
+  .pie-title{font-family:var(--fh);font-size:14px;font-weight:600;margin-bottom:1rem;}
+  .pie-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1.25rem;}
+  .pie-card{background:var(--s);border:1px solid var(--b);border-radius:12px;padding:1.25rem;display:flex;flex-direction:column;align-items:center;gap:12px;}
+  .pie-name{font-size:13px;font-weight:600;text-align:center;}
+  .pie-canvas{width:140px;height:140px;}
+  .pie-legend{width:100%;display:flex;flex-direction:column;gap:5px;}
+  .pie-leg-item{display:flex;align-items:center;gap:7px;font-size:11px;}
+  .pie-leg-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+  .pie-leg-label{flex:1;color:var(--m);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .pie-leg-val{font-family:var(--fm);font-size:10px;color:var(--ac2);flex-shrink:0;}
 </style>
 </head>
 <body>
@@ -171,6 +190,16 @@
         <div class="bc"><div class="bt">Top karty</div><div id="cb"></div></div>
       </div>
       <div class="tw"><table><thead><tr><th>Člen</th><th>Záznamy</th><th>Celkem</th><th>Podíl</th></tr></thead><tbody id="tb-m"></tbody></table></div>
+      <!-- Filtr sloupce pro koláče -->
+      <div class="list-filter" id="list-filter-row">
+        <span class="list-filter-label">Filtr koláčů — sloupec:</span>
+        <select id="f-list" onchange="rPie(byP(allLogs))"><option value="">Všechny sloupce</option></select>
+      </div>
+      <!-- Koláčové grafy -->
+      <div class="pie-section" id="pie-section">
+        <div class="pie-title">Karty napříč nástěnkami</div>
+        <div class="pie-grid" id="pie-grid"></div>
+      </div>
     </div>
     <div id="tab-c" style="display:none">
       <div class="tw"><table><thead><tr><th>Karta</th><th>Štítky</th><th>Pracovali</th><th>Celkem</th><th>Průběh</th></tr></thead><tbody id="tb-c"></tbody></table></div>
@@ -201,11 +230,11 @@ function lh(c){return LH[c]||'#888';}
 function rL(labels){if(!labels||!labels.length)return'<span style="color:var(--m);font-size:12px">—</span>';return'<div class="lc">'+labels.map(l=>'<span class="lp" style="background:'+lh(l.color)+'">'+(l.name||'')+'</span>').join('')+'</div>';}
 const IN_TRELLO=(()=>{try{return window.self!==window.top&&typeof TrelloPowerUp!=='undefined';}catch(e){return false;}})();
 const MOCK=[
-  {id:'l1',memberId:'m1',memberName:'Jakub Novák',boardId:'b1',boardName:'Klient A',cardId:'c1',cardName:'Redesign homepage',cardLabels:[{name:'Design',color:'purple'},{name:'Q2',color:'green'}],mins:90,desc:'Wireframy',date:'2026-03-28'},
-  {id:'l2',memberId:'m1',memberName:'Jakub Novák',boardId:'b1',boardName:'Klient A',cardId:'c1',cardName:'Redesign homepage',cardLabels:[{name:'Design',color:'purple'}],mins:135,desc:'Hero sekce',date:'2026-03-28'},
-  {id:'l3',memberId:'m2',memberName:'Tereza Dvořák',boardId:'b1',boardName:'Klient A',cardId:'c2',cardName:'API Stripe',cardLabels:[{name:'Backend',color:'blue'}],mins:180,desc:'OAuth flow',date:'2026-03-27'},
-  {id:'l4',memberId:'m3',memberName:'Marek Svoboda',boardId:'b2',boardName:'Klient B',cardId:'c3',cardName:'Bug #342',cardLabels:[{name:'Bug',color:'red'}],mins:75,desc:'Debug',date:'2026-03-26'},
-  {id:'l5',memberId:'m1',memberName:'Jakub Novák',boardId:'b2',boardName:'Klient B',cardId:'c4',cardName:'Teambuilding',cardLabels:[{name:'Socials',color:'blue'}],mins:45,desc:'Email koordinace',date:'2026-03-28'},
+  {id:'l1',memberId:'m1',memberName:'Jakub Novák',boardId:'b1',boardName:'Klient A',cardId:'c1',cardName:'Redesign homepage',cardLabels:[{name:'Design',color:'purple'},{name:'Q2',color:'green'}],listName:'Probíhá',mins:90,desc:'Wireframy',date:'2026-03-28'},
+  {id:'l2',memberId:'m1',memberName:'Jakub Novák',boardId:'b1',boardName:'Klient A',cardId:'c1',cardName:'Redesign homepage',cardLabels:[{name:'Design',color:'purple'}],listName:'Probíhá',mins:135,desc:'Hero sekce',date:'2026-03-28'},
+  {id:'l3',memberId:'m2',memberName:'Tereza Dvořák',boardId:'b1',boardName:'Klient A',cardId:'c2',cardName:'API Stripe',cardLabels:[{name:'Backend',color:'blue'}],listName:'Probíhá',mins:180,desc:'OAuth flow',date:'2026-03-27'},
+  {id:'l4',memberId:'m3',memberName:'Marek Svoboda',boardId:'b2',boardName:'Klient B',cardId:'c3',cardName:'Bug #342',cardLabels:[{name:'Bug',color:'red'}],listName:'Hotovo',mins:75,desc:'Debug',date:'2026-03-26'},
+  {id:'l5',memberId:'m1',memberName:'Jakub Novák',boardId:'b2',boardName:'Klient B',cardId:'c4',cardName:'Teambuilding',cardLabels:[{name:'Socials',color:'blue'}],listName:'Probíhá',mins:45,desc:'Email koordinace',date:'2026-03-28'},
 ];
 let _t=null;if(IN_TRELLO)_t=TrelloPowerUp.iframe({appKey:'e4d8502325aff04bbe003d7c3eea4acf',appName:'PrimeTime'});
 const COLS=['#6C5CE7','#00B894','#E17055','#0984E3','#FDCB6E','#A29BFE','#D63031','#00CEC9'];
@@ -277,7 +306,108 @@ async function switchBoard(boardId){
   renderAll();
 }
 
-function renderAll(){const l=byP(allLogs);rS(l);rM(l);rC(l);rDD(l);rLog();}
+function renderAll(){
+  const l=byP(allLogs);
+  rS(l);rM(l);rC(l);rDD(l);rLog();
+  // Naplň dropdown sloupců
+  const lists=[...new Set(allLogs.map(lg=>lg.listName).filter(Boolean))].sort();
+  const sel=document.getElementById('f-list');
+  if(sel){
+    const cur=sel.value;
+    sel.innerHTML='<option value="">Všechny sloupce</option>'+lists.map(n=>'<option value="'+n+'"'+(n===cur?' selected':'')+'>'+n+'</option>').join('');
+    sel.value=cur;
+  }
+  rPie(l);
+}
+
+function updateListBadge(listName){
+  const row=document.getElementById('list-filter-row');
+  if(!row)return;
+  const old=row.querySelector('.list-badge');if(old)old.remove();
+  if(listName){
+    const badge=document.createElement('span');
+    badge.className='list-badge';
+    badge.textContent='Sloupec: '+listName;
+    row.appendChild(badge);
+  }
+}
+
+// ── Barvy nástěnek — konzistentní napříč grafy ──────────────
+const BOARD_COLS=['#6C5CE7','#00B894','#E17055','#0984E3','#FDCB6E','#A29BFE','#D63031','#00CEC9','#fd79a8','#55efc4'];
+const boardColorMap={};
+function boardColor(boardId){
+  if(!boardColorMap[boardId]){
+    const keys=Object.keys(boardColorMap);
+    boardColorMap[boardId]=BOARD_COLS[keys.length%BOARD_COLS.length];
+  }
+  return boardColorMap[boardId];
+}
+
+function rPie(logs){
+  const grid=document.getElementById('pie-grid');
+  if(!grid)return;
+
+  // Aplikuj filtr sloupce
+  const selList=document.getElementById('f-list');
+  const filterList=selList?selList.value:'';
+  const filteredLogs=filterList?logs.filter(l=>l.listName===filterList):logs;
+
+  // Seřad nástěnky pro konzistentní barvy
+  const boards=[...new Set(filteredLogs.map(l=>l.boardId))];
+  boards.forEach(id=>boardColor(id));
+
+  // Pro každého člena: kolik unikátních karet na jaké nástěnce
+  const memberMap=new Map();
+  filteredLogs.forEach(l=>{
+    if(!memberMap.has(l.memberId))memberMap.set(l.memberId,{name:l.memberName,boards:{}});
+    const m=memberMap.get(l.memberId);
+    if(!m.boards[l.boardId])m.boards[l.boardId]=new Set();
+    m.boards[l.boardId].add(l.cardId);
+  });
+
+  if(!memberMap.size){
+    grid.innerHTML='<div class="empty">'+(filterList?'Žádné karty ve sloupci "'+filterList+'"':'Žádná data')+'</div>';
+    // Zobraz badge s aktivním filtrem
+    updateListBadge(filterList);
+    return;
+  }
+  updateListBadge(filterList);
+
+  grid.innerHTML='';
+  for(const[memberId,data] of memberMap){
+    const card=document.createElement('div');card.className='pie-card';
+    const boardEntries=Object.entries(data.boards).map(([bid,cards])=>({boardId:bid,boardName:allLogs.find(l=>l.boardId===bid)?.boardName||bid,cards:cards.size}));
+    const total=boardEntries.reduce((s,b)=>s+b.cards,0);
+
+    // Canvas pie
+    const canvas=document.createElement('canvas');canvas.className='pie-canvas';canvas.width=140;canvas.height=140;
+    const ctx=canvas.getContext('2d');
+    let angle=-Math.PI/2;
+    boardEntries.forEach(b=>{
+      const slice=(b.cards/total)*Math.PI*2;
+      ctx.beginPath();ctx.moveTo(70,70);
+      ctx.arc(70,70,60,angle,angle+slice);
+      ctx.closePath();ctx.fillStyle=boardColor(b.boardId);ctx.fill();
+      angle+=slice;
+    });
+    // Střed — bílý kruh (donut efekt)
+    ctx.beginPath();ctx.arc(70,70,35,0,Math.PI*2);ctx.fillStyle='#16161A';ctx.fill();
+    // Číslo uprostřed
+    ctx.fillStyle='#F0EFE8';ctx.font='bold 18px DM Mono, monospace';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(total,70,70);
+
+    // Legenda
+    const legend=document.createElement('div');legend.className='pie-legend';
+    boardEntries.sort((a,b)=>b.cards-a.cards).forEach(b=>{
+      legend.innerHTML+='<div class="pie-leg-item"><div class="pie-leg-dot" style="background:'+boardColor(b.boardId)+'"></div><span class="pie-leg-label" title="'+b.boardName+'">'+b.boardName+'</span><span class="pie-leg-val">'+b.cards+' karet</span></div>';
+    });
+
+    card.innerHTML='<div class="pie-name">'+data.name+'</div>';
+    card.appendChild(canvas);
+    card.appendChild(legend);
+    grid.appendChild(card);
+  }
+}
 
 function rS(logs){
   const tot=logs.reduce((s,l)=>s+l.mins,0);
