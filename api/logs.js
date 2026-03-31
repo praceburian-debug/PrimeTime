@@ -12,11 +12,22 @@ function setCORS(res) {
 export default async function handler(req, res) {
   setCORS(res);
   if (req.method === 'OPTIONS') return res.status(204).end();
+  // /api/logs/total — cache endpoint pro card-badges
+  if (req.method === 'GET' && (req.url||'').includes('/total')) return getTotal(req, res);
   if (req.method === 'POST')   return createLog(req, res);
   if (req.method === 'GET')    return getLogs(req, res);
   if (req.method === 'PATCH')  return updateLog(req, res);
   if (req.method === 'DELETE') return deleteLog(req, res);
   return res.status(405).json({ error: 'Method Not Allowed' });
+}
+
+// ── GET /api/logs/total?cardId=xxx ────────────────────────
+// Čte z Redis cache — žádný výpočet, velmi rychlé
+async function getTotal(req, res) {
+  const cardId = (req.query||{}).cardId;
+  if (!cardId) return res.status(400).json({ error: 'Chybí cardId' });
+  const total = await redis.get('card-total:' + cardId);
+  return res.status(200).json({ total: parseInt(total||0) });
 }
 
 async function createLog(req, res) {
