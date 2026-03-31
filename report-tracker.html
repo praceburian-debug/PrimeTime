@@ -88,6 +88,31 @@
   .lt2{font-size:13px;color:var(--m);}
   .empty{padding:2rem;text-align:center;color:var(--m);font-size:13px;}
   .erbox{background:rgba(214,48,49,.08);border:1px solid rgba(214,48,49,.2);border-radius:10px;padding:1rem 1.25rem;color:#FF7675;font-size:13px;margin-bottom:1rem;}
+  /* Záložky */
+  .tabs{display:flex;gap:2px;border-bottom:1px solid var(--b);margin-bottom:1.5rem;}
+  .tab{padding:7px 16px;font-size:13px;font-weight:500;cursor:pointer;border:none;background:transparent;color:var(--m);font-family:var(--f);border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s;}
+  .tab.a{color:var(--txt);border-bottom-color:var(--ac);}
+  .tab:hover:not(.a){color:var(--txt);}
+  /* Docházka */
+  .att-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;}
+  .att-title{font-family:var(--fh);font-size:14px;font-weight:600;}
+  .btn-add-day{padding:7px 14px;background:var(--ac);color:white;border:none;border-radius:7px;font-size:12px;font-weight:600;font-family:var(--f);cursor:pointer;transition:background .15s;}
+  .btn-add-day:hover{background:#7C6AF0;}
+  .att-table{width:100%;border-collapse:collapse;}
+  .att-table th{text-align:left;padding:9px 1rem;font-size:10px;color:var(--m);text-transform:uppercase;letter-spacing:.08em;font-weight:500;border-bottom:1px solid var(--b);background:var(--s2);}
+  .att-table td{padding:9px 1rem;font-size:13px;border-bottom:1px solid var(--b);vertical-align:middle;}
+  .att-table tr:last-child td{border-bottom:none;}
+  .att-table tr:hover td{background:var(--s2);}
+  /* Inline edit v docházce */
+  .att-inp{font-family:var(--fm);font-size:12px;background:var(--s2);border:1px solid var(--ac);border-radius:5px;padding:4px 6px;color:var(--txt);outline:none;width:70px;text-align:center;}
+  .att-inp::-webkit-inner-spin-button,.att-inp::-webkit-outer-spin-button{-webkit-appearance:none;}
+  .att-cell{cursor:text;font-family:var(--fm);font-size:13px;}
+  .att-cell:hover{color:var(--ac2);}
+  .att-total{font-family:var(--fm);font-size:13px;color:var(--ac2);font-weight:500;}
+  .att-del{background:none;border:none;color:var(--m);cursor:pointer;font-size:14px;padding:2px 5px;border-radius:3px;transition:all .1s;}
+  .att-del:hover{background:rgba(214,48,49,.14);color:#FF7675;}
+  .att-sum{background:rgba(108,92,231,.06);border-top:2px solid rgba(108,92,231,.2);}
+  .att-sum td{font-weight:600;padding:10px 1rem;}
 </style>
 </head>
 <body>
@@ -117,6 +142,12 @@
   <div id="pl" class="pl"><div class="sp"></div><div class="lt2">Načítám záznamy…</div></div>
   <div id="ct" style="display:none">
     <div id="er" class="erbox" style="display:none"></div>
+    <div class="tabs">
+      <button class="tab a" id="tab-btn-time" onclick="setTab('time',this)">Čas</button>
+      <button class="tab" id="tab-btn-att" onclick="setTab('att',this)">Docházka</button>
+    </div>
+
+    <div id="tab-time">
     <div class="member-header">
       <div class="mav" id="m-av">?</div>
       <div class="minfo">
@@ -133,7 +164,37 @@
     <div class="tw">
       <div class="tw-title">Záznamy podle karet</div>
       <div id="grouped-log"></div>
-    </div>
+    </div><!-- /tab-time -->
+
+    <!-- Záložka Docházka -->
+    <div id="tab-att" style="display:none">
+      <div class="att-header">
+        <div class="att-title">Docházka</div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button class="eb" onclick="exportAttCSV()">⬇ CSV</button>
+          <button class="btn-add-day" onclick="addAttDay()">+ Přidat den</button>
+        </div>
+      </div>
+      <div class="tw">
+        <table class="att-table">
+          <thead><tr>
+            <th>Datum</th>
+            <th>Příchod</th>
+            <th>Odchod</th>
+            <th>Oběd (min)</th>
+            <th>Odpracováno</th>
+            <th></th>
+          </tr></thead>
+          <tbody id="att-body"></tbody>
+          <tfoot><tr class="att-sum" id="att-sum" style="display:none">
+            <td colspan="4" style="color:var(--m);font-size:12px">Celkem</td>
+            <td class="att-total" id="att-total-sum">—</td>
+            <td></td>
+          </tr></tfoot>
+        </table>
+      </div>
+    </div><!-- /tab-att -->
+
   </div>
 </div>
 <script>
@@ -182,6 +243,7 @@ async function init(){
     document.getElementById('pl').style.display='none';
     document.getElementById('ct').style.display='block';
     render();
+    loadAtt();
   }catch(e){
     document.getElementById('pl').style.display='none';
     document.getElementById('ct').style.display='block';
@@ -285,6 +347,134 @@ function exportCSV(){
   logs.forEach(l=>rows.push([l.boardName||l.boardId,l.cardName||l.cardId,l.desc||'',l.mins,l.date]));
   const csv=rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n');
   Object.assign(document.createElement('a'),{href:URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'})),download:'primetime-muj-report-'+new Date().toISOString().slice(0,10)+'.csv'}).click();
+}
+
+
+// ── Docházka ──────────────────────────────────────────────
+const ATT_KEY='pt-attendance';
+let attData=[];
+
+function setTab(tab,btn){
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('a'));
+  btn.classList.add('a');
+  document.getElementById('tab-time').style.display=tab==='time'?'block':'none';
+  document.getElementById('tab-att').style.display=tab==='att'?'block':'none';
+}
+
+async function loadAtt(){
+  if(IN_TRELLO){
+    const d=await _t.get('member','private',ATT_KEY);
+    attData=d||[];
+  }else{
+    // Mock
+    const today=new Date().toISOString().slice(0,10);
+    const yesterday=new Date(Date.now()-86400000).toISOString().slice(0,10);
+    attData=[
+      {id:'a1',date:yesterday,arrival:'09:00',departure:'17:30',lunch:45},
+      {id:'a2',date:today,arrival:'08:45',departure:'',lunch:0},
+    ];
+  }
+  renderAtt();
+}
+
+async function saveAtt(){
+  if(IN_TRELLO)await _t.set('member','private',ATT_KEY,attData);
+}
+
+function attMins(r){
+  if(!r.arrival||!r.departure)return null;
+  const [ah,am]=r.arrival.split(':').map(Number);
+  const [dh,dm]=r.departure.split(':').map(Number);
+  const total=(dh*60+dm)-(ah*60+am);
+  return Math.max(0,total-(r.lunch||0));
+}
+
+function fmtMins(m){
+  if(m===null)return'—';
+  const h=Math.floor(m/60),mm=m%60;
+  return h>0?h+'h '+String(mm).padStart(2,'0')+'m':mm+'m';
+}
+
+function genAttId(){return 'a'+Date.now().toString(36);}
+
+function renderAtt(){
+  const tbody=document.getElementById('att-body');
+  const sorted=[...attData].sort((a,b)=>b.date.localeCompare(a.date));
+  if(!sorted.length){
+    tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--m);padding:2rem;font-size:13px">Žádné záznamy — přidej první den tlačítkem výše</td></tr>';
+    document.getElementById('att-sum').style.display='none';
+    return;
+  }
+  tbody.innerHTML=sorted.map(r=>{
+    const mins=attMins(r);
+    const incomplete=r.arrival&&!r.departure;
+    return'<tr>'
+      +'<td class="att-cell" onclick="attEdit(this,''+r.id+'','date')">'+r.date+'</td>'
+      +'<td class="att-cell" onclick="attEdit(this,''+r.id+'','arrival')">'+( r.arrival||'—')+'</td>'
+      +'<td class="att-cell" onclick="attEdit(this,''+r.id+'','departure')">'+(r.departure||( incomplete?'<span style="color:#FDCB6E;font-size:11px">probíhá…</span>':'—'))+'</td>'
+      +'<td class="att-cell" onclick="attEdit(this,''+r.id+'','lunch')">'+(r.lunch?r.lunch+' min':'—')+'</td>'
+      +'<td class="att-total">'+fmtMins(mins)+'</td>'
+      +'<td><button class="att-del" onclick="delAtt(''+r.id+'')" title="Smazat">×</button></td>'
+      +'</tr>';
+  }).join('');
+  // Součet
+  const totalMins=attData.reduce((s,r)=>{const m=attMins(r);return s+(m||0);},0);
+  document.getElementById('att-total-sum').textContent=fmtMins(totalMins);
+  document.getElementById('att-sum').style.display='';
+}
+
+function addAttDay(){
+  const today=new Date().toISOString().slice(0,10);
+  const now=new Date();
+  const hh=String(now.getHours()).padStart(2,'0');
+  const mm=String(now.getMinutes()).padStart(2,'0');
+  attData.unshift({id:genAttId(),date:today,arrival:hh+':'+mm,departure:'',lunch:0});
+  saveAtt();renderAtt();
+}
+
+function delAtt(id){
+  attData=attData.filter(r=>r.id!==id);
+  saveAtt();renderAtt();
+}
+
+function attEdit(cell,id,field){
+  if(cell.querySelector('input'))return;
+  const rec=attData.find(r=>r.id===id);
+  if(!rec)return;
+  const orig=rec[field];
+  let inp;
+  if(field==='lunch'){
+    inp=document.createElement('input');
+    inp.type='number';inp.min='0';inp.max='120';
+    inp.className='att-inp';inp.value=orig||'';inp.style.width='60px';
+  }else if(field==='date'){
+    inp=document.createElement('input');
+    inp.type='date';inp.className='att-inp';inp.value=orig||'';inp.style.width='120px';
+  }else{
+    // arrival / departure — time input
+    inp=document.createElement('input');
+    inp.type='time';inp.className='att-inp';inp.value=orig||'';inp.style.width='80px';
+  }
+  cell.innerHTML='';cell.appendChild(inp);
+  inp.focus();
+  const done=async()=>{
+    const val=field==='lunch'?(parseInt(inp.value)||0):inp.value.trim();
+    rec[field]=val;
+    await saveAtt();
+    renderAtt();
+  };
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();inp.blur();}if(e.key==='Escape'){renderAtt();}});
+  inp.addEventListener('blur',done,{once:true});
+  inp.addEventListener('change',()=>{if(inp.type==='time'||inp.type==='date')setTimeout(()=>inp.blur(),50);});
+}
+
+function exportAttCSV(){
+  const rows=[['Datum','Příchod','Odchod','Oběd (min)','Odpracováno']];
+  [...attData].sort((a,b)=>b.date.localeCompare(a.date)).forEach(r=>{
+    rows.push([r.date,r.arrival||'',r.departure||'',r.lunch||0,fmtMins(attMins(r))]);
+  });
+  const csv=rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n');
+  Object.assign(document.createElement('a'),{href:URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'})),download:'primetime-dochazka-'+new Date().toISOString().slice(0,10)+'.csv'}).click();
 }
 
 init();
