@@ -97,6 +97,13 @@
   .member-bar-time{font-family:var(--fm);font-size:11px;color:var(--ac);width:60px;text-align:right;flex-shrink:0;}
 
   /* Tabulka karet se seskupenými záznamy */
+  /* Docházka */
+  .att-print-table{width:100%;border-collapse:collapse;font-size:12px;}
+  .att-print-table th{text-align:left;padding:7px 10px;font-size:10px;color:var(--m);text-transform:uppercase;letter-spacing:.07em;font-weight:600;background:var(--s);border-bottom:2px solid var(--b);}
+  .att-print-table td{padding:9px 10px;border-bottom:1px solid var(--b);font-size:13px;}
+  .att-print-table tr:last-child td{border-bottom:none;}
+  .att-time{font-family:var(--fm);font-size:13px;color:var(--ac);font-weight:600;}
+
   .cards-table{width:100%;border-collapse:collapse;font-size:12px;}
   .cards-table th{
     text-align:left;padding:7px 10px;
@@ -323,6 +330,47 @@ function render(data){
 }
 
 // Načti data ze sessionStorage
+function renderAtt(data){
+  const period=data.monthLabel||'—';
+  const genDate=new Date(data.generatedAt).toLocaleString('cs-CZ',{day:'numeric',month:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit'});
+
+  document.getElementById('tb-period').textContent=period;
+  document.getElementById('doc-period').textContent=period;
+  document.getElementById('doc-generated').textContent='Vygenerováno '+genDate;
+  document.getElementById('footer-date').textContent=genDate;
+
+  // Schovat sekce které nejsou pro docházku
+  document.getElementById('members-section').style.display='none';
+  document.getElementById('p-tot').closest('.stats').style.display='none';
+
+  const summaries=data.summaries||{};
+  const rows=Object.entries(summaries).map(([,{memberName,summary}])=>{
+    const mins=summary[data.month]||0;
+    return{memberName,mins};
+  }).sort((a,b)=>b.mins-a.mins);
+
+  const totalMins=rows.reduce((s,r)=>s+r.mins,0);
+
+  document.querySelector('.section:last-of-type .section-title').textContent='Docházka — '+period;
+  document.getElementById('p-cards').closest('table').outerHTML=`
+    <table class="att-print-table">
+      <thead><tr>
+        <th>Člen</th>
+        <th style="text-align:right">Odpracováno</th>
+      </tr></thead>
+      <tbody>
+        ${rows.map(({memberName,mins})=>`<tr>
+          <td style="font-weight:500">${memberName}</td>
+          <td class="att-time" style="text-align:right">${mins?fmtHM(mins):'—'}</td>
+        </tr>`).join('')}
+        <tr style="border-top:2px solid var(--b);font-weight:700">
+          <td>Celkem</td>
+          <td class="att-time" style="text-align:right">${fmtHM(totalMins)}</td>
+        </tr>
+      </tbody>
+    </table>`;
+}
+
 window.addEventListener('DOMContentLoaded',()=>{
   try{
     const hash=window.location.hash.slice(1);
@@ -331,7 +379,8 @@ window.addEventListener('DOMContentLoaded',()=>{
       return;
     }
     const data=JSON.parse(decodeURIComponent(escape(atob(hash))));
-    render(data);
+    if(data.type==='attendance')renderAtt(data);
+    else render(data);
   }catch(e){
     document.querySelector('.doc').innerHTML='<div style="padding:3rem;text-align:center;color:#ef4444">Chyba: '+e.message+'</div>';
   }

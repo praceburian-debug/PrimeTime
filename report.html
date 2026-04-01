@@ -242,6 +242,7 @@
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
         <div id="att-month-pills" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
         <button class="eb" onclick="exportAdminAttCSV()">⬇ CSV</button>
+        <button class="eb" onclick="openAttPrint()">🖨 Tisk</button>
       </div>
       <div class="tw">
         <table class="att-table">
@@ -697,6 +698,19 @@ function openPrint(){
     logs,
   };
   // Předej data přes URL hash jako base64 — funguje cross-origin
+  const b64=btoa(unescape(encodeURIComponent(JSON.stringify(printData))));
+  window.open('./report-print.html#'+b64,'_blank');
+}
+
+
+function openAttPrint(){
+  const printData={
+    type:'attendance',
+    month:attSelectedMonth,
+    monthLabel:attSelectedMonth?new Date(attSelectedMonth+'-01').toLocaleDateString('cs-CZ',{month:'long',year:'numeric'}):'—',
+    generatedAt:new Date().toISOString(),
+    summaries:attSummaries,
+  };
   const b64=btoa(unescape(encodeURIComponent(JSON.stringify(printData))));
   window.open('./report-print.html#'+b64,'_blank');
 }
