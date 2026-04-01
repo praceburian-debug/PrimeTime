@@ -633,8 +633,11 @@ async function loadAdminAtt(){
       'm3':{memberName:'Marek Svoboda',summary:{[ym]:7200,[prev]:8100},updatedAt:new Date().toISOString()},
     };
   }else{
-    const data=await _t.get('board','shared','pt-att-summaries');
+    let data=await _t.get('board','shared','pt-att-summaries');
+    // Trello někdy vrátí stringified JSON
+    if(typeof data==='string'){try{data=JSON.parse(data);}catch{data={};}}
     attSummaries=data||{};
+    console.log('pt-att-summaries loaded:', JSON.stringify(attSummaries).slice(0,200));
   }
   renderAdminAtt();
 }

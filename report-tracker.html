@@ -398,7 +398,8 @@ async function syncAttSummary(){
     summary[month]=(summary[month]||0)+m;
   });
   // Ulož do board shared pod klíčem pt-att-summary:{memberId}
-  const existing=await _t.get('board','shared','pt-att-summaries')||{};
+  let existing=await _t.get('board','shared','pt-att-summaries')||{};
+  if(typeof existing==='string'){try{existing=JSON.parse(existing);}catch{existing={};}}
   existing[memberId]={memberName,summary,updatedAt:new Date().toISOString()};
   await _t.set('board','shared','pt-att-summaries',existing);
 }
