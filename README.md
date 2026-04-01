@@ -1,6 +1,6 @@
 # PrimeTime Backend
 
-Serverless backend pro naplánované Trello komentáře.
+Serverless backend pro naplánované Trello komentáře. 
 
 ## Stack
 - **Vercel** Edge Functions — API endpointy
