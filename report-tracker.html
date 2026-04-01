@@ -359,7 +359,7 @@ function setTab(tab,btn){
   btn.classList.add('a');
   document.getElementById('tab-time').style.display=tab==='time'?'block':'none';
   document.getElementById('tab-att').style.display=tab==='att'?'block':'none';
-  if(tab==='att')loadAtt();
+  if(tab==='att'){loadAtt();if(memberId)syncAttSummary();}
 }
 
 async function loadAtt(){
@@ -375,8 +375,6 @@ async function loadAtt(){
     ];
   }
   renderAtt();
-  // Sync souhrnů při každém otevření reportu
-  if(IN_TRELLO)syncAttSummary();
 }
 
 async function saveAtt(){
@@ -389,6 +387,7 @@ async function saveAtt(){
 
 async function syncAttSummary(){
   if(!IN_TRELLO)return;
+  if(!memberId)return; // memberId musí být nastaveno před synchronizací
   // Sestav souhrny per měsíc: { 'YYYY-MM': totalMins }
   const summary={};
   attData.forEach(r=>{
