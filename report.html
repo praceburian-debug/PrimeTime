@@ -395,10 +395,39 @@ async function rPie(logs){
   [...new Set(logs.map(l=>l.boardId))].forEach(id=>boardColor(id));
 
   if(!memberMap.size){
-    grid.innerHTML='<div class="empty">Žádné karty ve sloupci \"Probíhá\" s natrekovaným časem</div>';
+    grid.innerHTML='<div class="empty">Žádné karty ve sloupci "Probíhá" s natrekovaným časem</div>';
     return;
   }
 
+  // Render koláčů
+  grid.innerHTML='';
+  for(const[memberId,data] of memberMap){
+    const card=document.createElement('div');card.className='pie-card';
+    const boardEntries=Object.entries(data.boards).map(([bid,cards])=>({boardId:bid,boardName:logs.find(l=>l.boardId===bid)?.boardName||bid,cards:cards.size}));
+    const total=boardEntries.reduce((s,b)=>s+b.cards,0);
+    const canvas=document.createElement('canvas');canvas.className='pie-canvas';canvas.width=140;canvas.height=140;
+    const ctx=canvas.getContext('2d');
+    let angle=-Math.PI/2;
+    boardEntries.forEach(b=>{
+      const slice=(b.cards/total)*Math.PI*2;
+      ctx.beginPath();ctx.moveTo(70,70);
+      ctx.arc(70,70,60,angle,angle+slice);
+      ctx.closePath();ctx.fillStyle=boardColor(b.boardId);ctx.fill();
+      angle+=slice;
+    });
+    ctx.beginPath();ctx.arc(70,70,35,0,Math.PI*2);ctx.fillStyle='#16161A';ctx.fill();
+    ctx.fillStyle='#F0EFE8';ctx.font='bold 18px DM Mono, monospace';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(total,70,70);
+    const legend=document.createElement('div');legend.className='pie-legend';
+    boardEntries.sort((a,b)=>b.cards-a.cards).forEach(b=>{
+      legend.innerHTML+='<div class="pie-leg-item"><div class="pie-leg-dot" style="background:'+boardColor(b.boardId)+'"></div><span class="pie-leg-label" title="'+b.boardName+'">'+b.boardName+'</span><span class="pie-leg-val">'+b.cards+' karet</span></div>';
+    });
+    card.innerHTML='<div class="pie-name">'+data.name+'</div>';
+    card.appendChild(canvas);
+    card.appendChild(legend);
+    grid.appendChild(card);
+  }
+}
 
 function rS(logs){
   const tot=logs.reduce((s,l)=>s+l.mins,0);
