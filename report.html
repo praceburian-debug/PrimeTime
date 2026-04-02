@@ -356,72 +356,49 @@ function boardColor(boardId){
   return boardColorMap[boardId];
 }
 
-function rPie(logs){
+async function rPie(logs){
   const grid=document.getElementById('pie-grid');
   if(!grid)return;
+  grid.innerHTML='<div class="empty" style="padding:2rem">Načítám živá data z Trello…</div>';
 
-  // Filtruj sloupec 'Probíhá' — pokud žádný záznam listName nemá, zobraz vše
-  const RUNNING_LIST='Probíhá';
-  const hasListNames=logs.some(l=>l.listName);
-  const filteredLogs=hasListNames?logs.filter(l=>l.listName===RUNNING_LIST):logs;
-
-  // Nastav titulek sekce
   const pt=document.getElementById('pie-title');
-  if(pt)pt.textContent=hasListNames?'Probíhající karty napříč nástěnkami':'Karty napříč nástěnkami';
+  if(pt)pt.textContent='Probíhající karty napříč nástěnkami';
 
-  // Seřad nástěnky pro konzistentní barvy
-  const boards=[...new Set(filteredLogs.map(l=>l.boardId))];
-  boards.forEach(id=>boardColor(id));
+  // Načti živý stav karet ze všech nástěnek přes backend
+  const boardIds=[...new Set(logs.map(l=>l.boardId))].filter(Boolean);
+  const mid=IN_TRELLO?(await _t.member('id')).id:'m1';
 
-  // Pro každého člena: kolik unikátních karet na jaké nástěnce
+  // Mapa: cardId → { boardId, boardName } — karty živě ve sloupci Probíhá
+  const liveCards=new Map();
+  await Promise.all(boardIds.map(async boardId=>{
+    try{
+      const res=await fetch(`${BACKEND}/api/board-cards?boardId=${encodeURIComponent(boardId)}&memberId=${mid}&listName=${encodeURIComponent('Probíhá')}`);
+      if(!res.ok)return;
+      const{cards=[]}=await res.json();
+      const boardName=logs.find(l=>l.boardId===boardId)?.boardName||boardId;
+      cards.forEach(card=>{liveCards.set(card.id,{boardId,boardName,cardName:card.name});});
+    }catch(e){console.warn('board-cards error:',boardId,e);}
+  }));
+
+  // Zkřížení: logy × živé karty
   const memberMap=new Map();
-  filteredLogs.forEach(l=>{
+  logs.forEach(l=>{
+    if(!liveCards.has(l.cardId))return;
+    const card=liveCards.get(l.cardId);
     if(!memberMap.has(l.memberId))memberMap.set(l.memberId,{name:l.memberName,boards:{}});
     const m=memberMap.get(l.memberId);
-    if(!m.boards[l.boardId])m.boards[l.boardId]=new Set();
-    m.boards[l.boardId].add(l.cardId);
+    if(!m.boards[card.boardId])m.boards[card.boardId]=new Set();
+    m.boards[card.boardId].add(l.cardId);
   });
 
+  // Seřad nástěnky pro barvy
+  [...new Set(logs.map(l=>l.boardId))].forEach(id=>boardColor(id));
+
   if(!memberMap.size){
-    grid.innerHTML='<div class="empty">Žádná data pro zobrazení</div>';
+    grid.innerHTML='<div class="empty">Žádné karty ve sloupci \"Probíhá\" s natrekovaným časem</div>';
     return;
   }
 
-  grid.innerHTML='';
-  for(const[memberId,data] of memberMap){
-    const card=document.createElement('div');card.className='pie-card';
-    const boardEntries=Object.entries(data.boards).map(([bid,cards])=>({boardId:bid,boardName:allLogs.find(l=>l.boardId===bid)?.boardName||bid,cards:cards.size}));
-    const total=boardEntries.reduce((s,b)=>s+b.cards,0);
-
-    // Canvas pie
-    const canvas=document.createElement('canvas');canvas.className='pie-canvas';canvas.width=140;canvas.height=140;
-    const ctx=canvas.getContext('2d');
-    let angle=-Math.PI/2;
-    boardEntries.forEach(b=>{
-      const slice=(b.cards/total)*Math.PI*2;
-      ctx.beginPath();ctx.moveTo(70,70);
-      ctx.arc(70,70,60,angle,angle+slice);
-      ctx.closePath();ctx.fillStyle=boardColor(b.boardId);ctx.fill();
-      angle+=slice;
-    });
-    // Střed — bílý kruh (donut efekt)
-    ctx.beginPath();ctx.arc(70,70,35,0,Math.PI*2);ctx.fillStyle='#16161A';ctx.fill();
-    // Číslo uprostřed
-    ctx.fillStyle='#F0EFE8';ctx.font='bold 18px DM Mono, monospace';ctx.textAlign='center';ctx.textBaseline='middle';
-    ctx.fillText(total,70,70);
-
-    // Legenda
-    const legend=document.createElement('div');legend.className='pie-legend';
-    boardEntries.sort((a,b)=>b.cards-a.cards).forEach(b=>{
-      legend.innerHTML+='<div class="pie-leg-item"><div class="pie-leg-dot" style="background:'+boardColor(b.boardId)+'"></div><span class="pie-leg-label" title="'+b.boardName+'">'+b.boardName+'</span><span class="pie-leg-val">'+b.cards+' karet</span></div>';
-    });
-
-    card.innerHTML='<div class="pie-name">'+data.name+'</div>';
-    card.appendChild(canvas);
-    card.appendChild(legend);
-    grid.appendChild(card);
-  }
-}
 
 function rS(logs){
   const tot=logs.reduce((s,l)=>s+l.mins,0);
