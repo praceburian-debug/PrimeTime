@@ -19,6 +19,10 @@
   .fb:hover:not(.a){background:var(--s3);color:var(--txt);}
   .eb{padding:5px 14px;border-radius:7px;border:1px solid var(--b2);background:transparent;color:var(--m);font-size:12px;font-family:var(--f);cursor:pointer;transition:all .15s;}
   .eb:hover{background:var(--s2);color:var(--txt);}
+  .tb-sep{width:1px;height:20px;background:var(--b2);margin:0 4px;flex-shrink:0;}
+  .eb-icon{padding:5px 10px;border-radius:7px;border:1px solid var(--b2);background:transparent;color:var(--m);font-size:14px;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;}
+  .eb-icon:hover{background:var(--s2);color:var(--txt);}
+  .eb-icon.spinning svg{animation:spin .7s linear infinite;}
   .custom-wrap{position:relative;}
   #custom-picker{display:none;position:absolute;top:calc(100% + 8px);right:0;background:var(--s);border:1px solid var(--b2);border-radius:12px;padding:16px;z-index:200;width:256px;box-shadow:0 12px 40px rgba(0,0,0,0.55);}
   #custom-picker.open{display:block;}
@@ -119,8 +123,8 @@
 <div class="topbar">
   <div class="logo"><div class="logo-i">⏱</div>Prime<span>Time</span><span style="font-size:12px;color:var(--m);font-family:var(--f);font-weight:400;margin-left:4px">Můj report</span></div>
   <div class="tr">
-    <button class="fb" id="btn-week" onclick="setPeriod('week',this)">Tento týden</button>
     <button class="fb a" id="btn-today" onclick="setPeriod('today',this)">Dnes</button>
+    <button class="fb" id="btn-week" onclick="setPeriod('week',this)">Tento týden</button>
     <button class="fb" id="btn-month" onclick="setPeriod('month',this)">Tento měsíc</button>
     <button class="fb" id="btn-all" onclick="setPeriod('all',this)">Vše</button>
     <div class="custom-wrap">
@@ -135,7 +139,14 @@
         </div>
       </div>
     </div>
-    <button class="eb" onclick="exportCSV()">⬇ CSV</button>
+    <div class="tb-sep"></div>
+    <button class="eb-icon" id="btn-refresh" onclick="refreshReport(this)" title="Obnovit data">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="23 4 23 10 17 10"></polyline>
+        <polyline points="1 20 1 14 7 14"></polyline>
+        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+      </svg>
+    </button>
   </div>
 </div>
 <div class="mn">
@@ -498,6 +509,26 @@ function exportAttCSV(){
   });
   const csv=rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n');
   Object.assign(document.createElement('a'),{href:URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'})),download:'primetime-dochazka-'+new Date().toISOString().slice(0,10)+'.csv'}).click();
+}
+
+
+async function refreshReport(btn){
+  btn.classList.add('spinning');
+  btn.style.pointerEvents='none';
+  try{
+    let logs;
+    if(IN_TRELLO){
+      const res=await fetch(`${BACKEND}/api/logs?boardId=ALL&memberId=${memberId}`);
+      const data=await res.json();
+      logs=data.logs||[];
+    }else{logs=MOCK;}
+    allLogs=logs;
+    render();
+    if(document.getElementById('tab-att').style.display!=='none')loadAtt();
+  }finally{
+    btn.classList.remove('spinning');
+    btn.style.pointerEvents='';
+  }
 }
 
 init();
