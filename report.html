@@ -703,7 +703,7 @@ function renderAdminAtt(){
   const rows=Object.entries(attSummaries).map(([id,{memberName,summary,updatedAt}])=>{
     const mins=summary[attSelectedMonth]||0;
     const updated=updatedAt?new Date(updatedAt).toLocaleDateString('cs-CZ',{day:'numeric',month:'numeric',hour:'2-digit',minute:'2-digit'}):'—';
-    const c=COLS[Math.abs(id.split('').reduce((h,ch)=>h*31+ch.charCodeAt(0),0))%COLS.length];
+    const c=mc(id);
     const ini2=memberName.trim().split(' ').map((p,i)=>i===0?p[0]:(p[0]||'')).join('').toUpperCase();
     return{memberName,mins,updated,c,ini2};
   }).sort((a,b)=>b.mins-a.mins);
