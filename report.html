@@ -19,6 +19,10 @@
   .fb:hover:not(.a){background:var(--s3);color:var(--txt);}
   .eb{padding:5px 14px;border-radius:7px;border:1px solid var(--b2);background:transparent;color:var(--m);font-size:12px;font-family:var(--f);cursor:pointer;transition:all .15s;}
   .eb:hover{background:var(--s2);color:var(--txt);}
+  .tb-sep{width:1px;height:20px;background:var(--b2);margin:0 4px;flex-shrink:0;}
+  .eb-icon{padding:5px 10px;border-radius:7px;border:1px solid var(--b2);background:transparent;color:var(--m);font-size:14px;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;}
+  .eb-icon:hover{background:var(--s2);color:var(--txt);}
+  .eb-icon.spinning svg{animation:spin .7s linear infinite;}
   
   /* Custom picker */
   .custom-wrap{position:relative;}
@@ -151,8 +155,8 @@
 <div class="topbar">
   <div class="logo"><div class="logo-i">⏱</div>Prime<span>Time</span><span style="font-size:12px;color:var(--m);font-family:var(--f);font-weight:400;margin-left:4px">Report</span></div>
   <div class="tr">
-    <button class="fb" id="btn-week" onclick="setPeriod('week',this)">Tento týden</button>
     <button class="fb" id="btn-today" onclick="setPeriod('today',this)">Dnes</button>
+    <button class="fb" id="btn-week" onclick="setPeriod('week',this)">Tento týden</button>
     <button class="fb a" id="btn-month" onclick="setPeriod('month',this)">Tento měsíc</button>
     <button class="fb" id="btn-all" onclick="setPeriod('all',this)">Vše</button>
     <div class="custom-wrap">
@@ -167,8 +171,17 @@
         </div>
       </div>
     </div>
-    <button class="eb" onclick="exportCSV()">⬇ CSV</button>
-    <button class="eb" onclick="openPrint()">🖨 Tisk</button>
+    <div class="tb-sep"></div>
+    <button class="eb" onclick="exportCSV()" title="Exportovat CSV">⬇ CSV</button>
+    <div class="tb-sep"></div>
+    <button class="eb" onclick="openPrint()" title="Tisk / PDF">🖨 Tisk</button>
+    <button class="eb-icon" id="btn-refresh" onclick="refreshReport(this)" title="Obnovit data">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="23 4 23 10 17 10"></polyline>
+        <polyline points="1 20 1 14 7 14"></polyline>
+        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+      </svg>
+    </button>
   </div>
 </div>
 <div class="mn">
@@ -603,6 +616,25 @@ async function rUpdateLog(logId,changes){
 
 // ── Period + custom picker ─────────────────────────────────
 function setPeriod(p,btn){period=p;document.querySelectorAll('.fb').forEach(b=>b.classList.remove('a'));btn.classList.add('a');document.getElementById('btn-custom').textContent='Vlastní';closePicker();renderAll();}
+
+async function refreshReport(btn){
+  btn.classList.add('spinning');
+  btn.style.pointerEvents='none';
+  try{
+    const logs=await fetchLogs();
+    allLogs=logs;
+    cardNames={};cardLbls={};allBoards=[];
+    logs.forEach(l=>{
+      if(l.cardName)cardNames[l.cardId]=l.cardName;
+      if(l.cardLabels&&l.cardLabels.length)cardLbls[l.cardId]=l.cardLabels;
+      if(l.boardName&&!allBoards.find(b=>b.id===l.boardId))allBoards.push({id:l.boardId,name:l.boardName});
+    });
+    renderAll();
+  }finally{
+    btn.classList.remove('spinning');
+    btn.style.pointerEvents='';
+  }
+}
 function togglePicker(btn){const picker=document.getElementById('custom-picker');if(picker.classList.contains('open')){closePicker();}else{picker.classList.add('open');btn.classList.add('a');if(period==='custom'){document.getElementById('cp-from').value=customFrom;document.getElementById('cp-to').value=customTo;}}}
 function closePicker(){document.getElementById('custom-picker').classList.remove('open');if(period!=='custom')document.getElementById('btn-custom').classList.remove('a');}
 function applyCustom(){customFrom=document.getElementById('cp-from').value;customTo=document.getElementById('cp-to').value;if(!customFrom&&!customTo){closePicker();return;}period='custom';document.querySelectorAll('.fb').forEach(b=>b.classList.remove('a'));document.getElementById('btn-custom').classList.add('a');const label=customFrom&&customTo?customFrom.slice(5)+' – '+customTo.slice(5):customFrom||customTo;document.getElementById('btn-custom').textContent=label;closePicker();renderAll();}
