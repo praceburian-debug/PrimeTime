@@ -192,8 +192,35 @@ async function init(){
 }
 
 async function startTimer(){
+  // ── Zastav případný běžící časovač na jiné kartě ─────────
+  const active=await api.get('member','private','pt-active-card');
+  const prevCardId=active?.cardId||null;
+  if(prevCardId && prevCardId!==cardId){
+    // Načti elapsed čas jiné karty a zaloguj ho
+    const running=await api.get('member','private','tt-running-'+prevCardId);
+    if(running?.startedAt){
+      const prevMins=Math.max(1,Math.round((Date.now()-running.startedAt)/1000/60));
+      // Ulož log pro předchozí kartu — potřebujeme její cardName
+      // Uložíme jen přes backend s tím co máme v pt-active-card
+      const prevCardName=active?.cardName||prevCardId;
+      if(IN_TRELLO){
+        await fetch(BACKEND+'/api/logs',{
+          method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({
+            memberId:member.id,memberName:member.fullName,
+            boardId,boardName,
+            cardId:prevCardId,cardName:prevCardName,cardLabels:[],
+            mins:prevMins,desc:'⏱ Auto-zalogováno (nový tracker spuštěn)',
+            date:new Date().toISOString().slice(0,10),
+          }),
+        });
+      }
+      await api.remove('member','private','tt-running-'+prevCardId);
+      toast('⏹ Auto-zalogováno '+fmtHM(prevMins)+' na "'+prevCardName+'"');
+    }
+  }
+  // ── Spusť nový časovač ────────────────────────────────────
   await api.set('member','private','tt-running-'+cardId,{startedAt:Date.now()-tsecs*1000});
-  // Uložíme cardId + shortLink pro navigaci z board-buttons
   const sl=IN_TRELLO?(await _t.card('shortLink')).shortLink:'';
   await api.set('member','private','pt-active-card',{cardId,shortLink:sl,cardName});
   tint=setInterval(()=>{tsecs++;document.getElementById('clock').textContent=fmtS(tsecs);},1000);
