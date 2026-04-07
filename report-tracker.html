@@ -398,19 +398,35 @@ async function saveAtt(){
 
 async function syncAttSummary(){
   if(!IN_TRELLO)return;
-  if(!memberId)return; // memberId musí být nastaveno před synchronizací
+  if(!memberId)return;
+
   // Sestav souhrny per měsíc: { 'YYYY-MM': totalMins }
   const summary={};
   attData.forEach(r=>{
     const m=attMins(r);
     if(!m)return;
-    const month=r.date.slice(0,7); // YYYY-MM
+    const month=r.date.slice(0,7);
     summary[month]=(summary[month]||0)+m;
   });
-  // Ulož do board shared pod klíčem pt-att-summary:{memberId}
+
+  // Sestav také detailní záznamy per měsíc pro admin report
+  // { 'YYYY-MM': [ {date, arrival, departure, lunch, mins} ] }
+  const records={};
+  attData.forEach(r=>{
+    const month=r.date.slice(0,7);
+    if(!records[month])records[month]=[];
+    records[month].push({
+      date:r.date,
+      arrival:r.arrival||'',
+      departure:r.departure||'',
+      lunch:r.lunch||0,
+      mins:attMins(r)||0,
+    });
+  });
+
   let existing=await _t.get('board','shared','pt-att-summaries')||{};
   if(typeof existing==='string'){try{existing=JSON.parse(existing);}catch{existing={};}}
-  existing[memberId]={memberName,summary,updatedAt:new Date().toISOString()};
+  existing[memberId]={memberName,summary,records,updatedAt:new Date().toISOString()};
   await _t.set('board','shared','pt-att-summaries',existing);
 }
 
