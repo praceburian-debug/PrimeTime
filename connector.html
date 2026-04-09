@@ -13,8 +13,21 @@ const ICON_CLOCK  = 'https://cdn.jsdelivr.net/npm/lucide-static@0.441.0/icons/cl
 const ICON_CHART  = 'https://cdn.jsdelivr.net/npm/lucide-static@0.441.0/icons/bar-chart-2.svg';
 const ICON_COMMENT= 'https://cdn.jsdelivr.net/npm/lucide-static@0.441.0/icons/message-square.svg';
 
-async function getPerms(t){return(await t.get('board','shared','tt-permissions'))||{admins:[],trackers:[]};}
-async function getMid(t){return(await t.member('id')).id;}
+// Cache pro getPerms a getMid — TTL 60s, výrazně sníží počet Trello API volání
+const _cache={};
+function _cacheGet(k){const e=_cache[k];return(e&&Date.now()-e.t<60000)?e.v:null;}
+function _cacheSet(k,v){_cache[k]={v,t:Date.now()};return v;}
+
+async function getPerms(t){
+  const k='perms';const hit=_cacheGet(k);if(hit)return hit;
+  const v=(await t.get('board','shared','tt-permissions'))||{admins:[],trackers:[]};
+  return _cacheSet(k,v);
+}
+async function getMid(t){
+  const k='mid';const hit=_cacheGet(k);if(hit)return hit;
+  const v=(await t.member('id')).id;
+  return _cacheSet(k,v);
+}
 async function isAdmin(t){const[p,id]=await Promise.all([getPerms(t),getMid(t)]);return p.admins.length===0||p.admins.includes(id);}
 async function canTrack(t){const[p,id]=await Promise.all([getPerms(t),getMid(t)]);if(p.admins.includes(id))return true;return p.trackers.includes(id);}
 function fmtHM(m){const h=Math.floor(m/60),mm=m%60;return h>0?h+'h '+mm+'m':mm+'m';}
@@ -29,21 +42,15 @@ TrelloPowerUp.initialize({
 
   'show-authorization':(t)=>t.popup({title:'PrimeTime – Autorizace',url:'./authorize.html',height:200}),
 
-  // card-badges — z backendu
+  // card-badges — pouze cache, žádný fallback na plný výpočet
   'card-badges':async(t)=>{
     if(!await canTrack(t))return[];
-    const[card,board]=await Promise.all([t.card('id'),t.board('id')]);
+    const card=await t.card('id');
     try{
-      // Nejdřív zkus cache — rychlé
       const res=await fetch(`${BACKEND}/api/logs-total?cardId=${card.id}`);
       const{total=0}=await res.json();
-      if(total>0)return[{icon:ICON_CLOCK,text:fmtHM(total),color:'purple'}];
-      // Cache miss — fallback na plný výpočet (staré záznamy bez cache)
-      const res2=await fetch(`${BACKEND}/api/logs?boardId=${board.id}&cardId=${card.id}`);
-      const{logs=[]}=await res2.json();
-      const tot=logs.reduce((s,l)=>s+l.mins,0);
-      if(!tot)return[];
-      return[{icon:ICON_CLOCK,text:fmtHM(tot),color:'purple'}];
+      if(!total)return[];
+      return[{icon:ICON_CLOCK,text:fmtHM(total),color:'purple'}];
     }catch{return[];}
   },
 
