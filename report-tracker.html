@@ -92,7 +92,7 @@
   .lt2{font-size:13px;color:var(--m);}
   .empty{padding:2rem;text-align:center;color:var(--m);font-size:13px;}
   /* Edit overlay */
-  #edit-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200;display:none;align-items:center;justify-content:center;}
+  #edit-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.55);z-index:9999;display:none;align-items:center;justify-content:center;}
   #edit-overlay.on{display:flex;}
   .edit-box{background:var(--s);border:1px solid var(--b2);border-radius:12px;padding:16px;width:260px;box-shadow:0 8px 32px rgba(0,0,0,.5);}
   .edit-box-title{font-size:12px;font-weight:600;color:var(--m);text-transform:uppercase;letter-spacing:.07em;margin-bottom:12px;}
@@ -360,26 +360,16 @@ function rEditDesc(el,logId){
   inp.addEventListener('blur',done,{once:true});
 }
 
-function rEditTime(el,logId,origH,origM){
-  if(el.querySelector('input'))return;
-  el.innerHTML='<input class="r-edit-time" data-r="h" type="number" min="0" max="99" value="'+origH+'"><span class="r-edit-sep">:</span><input class="r-edit-time" data-r="m" type="number" min="0" max="59" value="'+String(origM).padStart(2,'0')+'">';
-  const ih=el.querySelector('[data-r="h"]'),im=el.querySelector('[data-r="m"]');
-  ih.focus();ih.select();
-  let saved=false;
-  const done=async()=>{
-    if(saved)return;saved=true;
-    const h=parseInt(ih.value)||0,m=parseInt(im.value)||0;
-    const mins=h*60+m;
-    if(mins<=0){el.textContent=fmtHM(origH*60+origM);return;}
-    el.textContent=fmtHM(mins);
-    const idx=allLogs.findIndex(l=>l.id===logId);if(idx>=0)allLogs[idx].mins=mins;
-    await rUpdate(logId,{mins});
-  };
-  const onKey=e=>{if(e.key==='Enter'){e.preventDefault();done();}if(e.key==='Escape'){saved=true;el.textContent=fmtHM(origH*60+origM);}};
-  ih.addEventListener('keydown',onKey);im.addEventListener('keydown',onKey);
-  // Blur — počkáme na next tick, pokud focus zůstal uvnitř el, nerušíme
-  const onBlur=()=>setTimeout(()=>{if(!el.contains(document.activeElement))done();},50);
-  ih.addEventListener('blur',onBlur);im.addEventListener('blur',onBlur);
+function rEditTime(el,logId,origH,origM,startH,stopH){
+  const log=allLogs.find(l=>l.id===logId);
+  const sH=startH||(log&&log.startHHMM)||'';
+  const eH=stopH||(log&&log.stopHHMM)||'';
+  openEditOverlay(logId,origH,origM,sH,eH,async(lid,changes)=>{
+    const idx=allLogs.findIndex(l=>l.id===lid);
+    if(idx>=0)allLogs[idx]={...allLogs[idx],...changes};
+    await rUpdate(lid,changes);
+    renderAll();
+  });
 }
 
 async function rUpdate(logId,changes){
