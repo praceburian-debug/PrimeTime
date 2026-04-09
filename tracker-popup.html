@@ -79,7 +79,24 @@
   #toast.on{opacity:1;transform:translateX(-50%) translateY(0);}
   .rdot{display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--gr);margin-right:4px;vertical-align:middle;animation:blink 1.4s infinite;}
   @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
-  .lt-range{font-family:var(--fm);font-size:9px;color:var(--m);margin-top:1px;}
+  /* Edit overlay */
+  #edit-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:50;display:none;align-items:center;justify-content:center;}
+  #edit-overlay.on{display:flex;}
+  .edit-box{background:var(--s);border:1px solid var(--b2);border-radius:12px;padding:16px;width:232px;box-shadow:0 8px 32px rgba(0,0,0,.5);}
+  .edit-box-title{font-size:12px;font-weight:600;color:var(--m);text-transform:uppercase;letter-spacing:.07em;margin-bottom:12px;}
+  .edit-row{display:flex;flex-direction:column;gap:3px;margin-bottom:10px;}
+  .edit-label{font-size:10px;color:var(--m);font-weight:500;}
+  .edit-field{font-family:var(--fm);font-size:13px;background:var(--s2);border:1px solid var(--b2);border-radius:6px;padding:7px 10px;color:var(--txt);outline:none;width:100%;}
+  .edit-field:focus{border-color:var(--ac);}
+  .edit-sep-row{display:flex;gap:8px;}
+  .edit-sep-row .edit-row{flex:1;}
+  .edit-actions{display:flex;gap:8px;margin-top:4px;}
+  .edit-save{flex:1;padding:8px;background:var(--ac);color:white;border:none;border-radius:7px;font-size:12px;font-weight:600;font-family:var(--f);cursor:pointer;}
+  .edit-save:hover{background:#7C6AF0;}
+  .edit-cancel{padding:8px 12px;background:transparent;color:var(--m);border:1px solid var(--b2);border-radius:7px;font-size:12px;font-family:var(--f);cursor:pointer;}
+  .edit-cancel:hover{background:var(--s2);color:var(--txt);}
+  .lt-range{font-family:var(--fm);font-size:9px;color:var(--m);margin-top:1px;cursor:text;}
+  .lt-range:hover{color:var(--ac2);}
   .edit-time-range{font-family:var(--fm);font-size:9px;background:var(--s2);border:1px solid var(--ac);border-radius:3px;padding:1px 3px;color:var(--txt);outline:none;width:38px;text-align:center;}
 </style>
 </head>
@@ -121,6 +138,20 @@
   <span class="tv" id="ltot">—</span>
 </div>
 <div id="toast"></div>
+<div id="edit-overlay">
+  <div class="edit-box">
+    <div class="edit-box-title">Upravit záznam</div>
+    <div class="edit-sep-row">
+      <div class="edit-row"><span class="edit-label">Od</span><input type="time" class="edit-field" id="eo-start"></div>
+      <div class="edit-row"><span class="edit-label">Do</span><input type="time" class="edit-field" id="eo-stop"></div>
+    </div>
+    <div class="edit-row"><span class="edit-label">Trvání (min)</span><input type="number" class="edit-field" id="eo-mins" min="1" max="999" placeholder="nebo zadej minuty"></div>
+    <div class="edit-actions">
+      <button class="edit-cancel" onclick="closeEditOverlay()">Zrušit</button>
+      <button class="edit-save" onclick="saveEditOverlay()">Uložit</button>
+    </div>
+  </div>
+</div>
 <script>
 const BACKEND='https://prime-time.vercel.app';
 const IN_TRELLO=(()=>{try{return window.self!==window.top&&typeof TrelloPowerUp!=='undefined';}catch(e){return false;}})();
@@ -350,10 +381,19 @@ async function renderLog(){
     const descEl=canEdit
       ?'<div class="ld" onclick="editDesc(this,\''+l.id+'\')">'+(l.desc||'—')+'</div>'
       :'<div class="ld">'+(l.desc||'—')+'</div>';
-    const timeEl=canEdit
-      ?'<div class="lt" id="time-'+l.id+'" onclick="editTime(\''+l.id+'\','+h+','+m+')">'+fmtHM(l.mins)+'</div>'
-      :'<div class="lt">'+fmtHM(l.mins)+'</div>';
-    return'<div class="le" id="le-'+l.id+'"><div class="av" style="background:'+c+'">'+ini(l.memberName)+'</div><div class="li2">'+descEl+'<div class="lm">'+l.memberName+' · '+l.date+'</div></div>'+timeEl+(canEdit?'<button class="ldel" onclick="deleteLog(\''+l.id+'\')" title="Smazat">×</button>':'')+'</div>';
+
+    // DD.MM.YYYY datum
+    const dateStr=fmtDateShort(l.date);
+    // Od–do: přednost startHHMM/stopHHMM, fallback z ISO timestamps
+    const startH=l.startHHMM||(l.startedAt?isoToHHMM(l.startedAt):'');
+    const stopH=l.stopHHMM||(l.stoppedAt?isoToHHMM(l.stoppedAt):'');
+    const rangeStr=(startH&&stopH)?startH+'–'+stopH:'';
+    // lt klik → editace h:m (mění trvání, přepočítá stop)
+    const editMins=canEdit?'onclick="editTime(\''+l.id+'\','+h+','+m+',\''+startH+'\',\''+stopH+'\',false)"':'';
+    // lt-range klik → editace přes time inputy od-do
+    const editRange=canEdit&&rangeStr?'onclick="editTime(\''+l.id+'\','+h+','+m+',\''+startH+'\',\''+stopH+'\',true)"':'';
+    const timeDisplay='<div class="lt-wrap"><div class="lt" id="time-'+l.id+'" '+editMins+'>'+fmtHM(l.mins)+'</div>'+(rangeStr?'<div class="lt-range" '+editRange+'>'+rangeStr+'</div>':'')+'</div>';
+    return'<div class="le" id="le-'+l.id+'"><div class="av" style="background:'+c+'">'+ini(l.memberName)+'</div><div class="li2">'+descEl+'<div class="lm">'+l.memberName+' · '+dateStr+'</div></div>'+timeDisplay+(canEdit?'<button class="ldel" onclick="deleteLog(\''+l.id+'\') " title="Smazat">×</button>':'')+'</div>';
   }).join('');
 }
 
@@ -369,57 +409,75 @@ function editDesc(el,logId){
 }
 
 // ── Inline editace času — data-r místo id (žádná kolize) ─
-function editTime(logId,origH,origM,origStart,origStop){
-  const el=document.getElementById('time-'+logId);
-  if(!el||el.querySelector('input'))return;
-  const hasRange=origStart&&origStop;
-  if(hasRange){
-    // Editace přes od-do časy
-    el.innerHTML='<input class="edit-time-range" data-r="s" type="time" value="'+origStart+'">'
-      +'<span class="edit-sep" style="font-size:9px">–</span>'
-      +'<input class="edit-time-range" data-r="e" type="time" value="'+origStop+'">';
-    const is=el.querySelector('[data-r="s"]'),ie=el.querySelector('[data-r="e"]');
-    is.focus();
-    let saved=false;
-    const done=async()=>{
-      if(saved)return;saved=true;
-      const sv=is.value,ev=ie.value;
-      if(!sv||!ev){el.textContent=fmtHM(origH*60+origM);return;}
-      const [sh,sm]=sv.split(':').map(Number);
-      const [eh,em]=ev.split(':').map(Number);
-      let mins=(eh*60+em)-(sh*60+sm);
-      if(mins<=0)mins+=24*60; // přes půlnoc
-      mins=Math.max(1,mins);
-      el.textContent=fmtHM(mins);
-      await updateLog(logId,{mins,startHHMM:sv,stopHHMM:ev});
-      await renderLog();
-    };
-    const onKey=e=>{if(e.key==='Enter'){e.preventDefault();done();}if(e.key==='Escape'){saved=true;el.textContent=fmtHM(origH*60+origM);}};
-    is.addEventListener('keydown',onKey);ie.addEventListener('keydown',onKey);
-    const onBlur=()=>setTimeout(()=>{if(!el.contains(document.activeElement))done();},50);
-    is.addEventListener('blur',onBlur);ie.addEventListener('blur',onBlur);
-    is.addEventListener('change',()=>setTimeout(()=>ie.focus(),50));
-  }else{
-    // Klasická editace přes h:m
-    el.innerHTML='<input class="edit-time" data-r="h" type="number" min="0" max="99" value="'+origH+'"><span class="edit-sep">:</span><input class="edit-time" data-r="m" type="number" min="0" max="59" value="'+String(origM).padStart(2,'0')+'">';
-    const ih=el.querySelector('[data-r="h"]'),im=el.querySelector('[data-r="m"]');
-    ih.focus();ih.select();
-    let saved=false;
-    const done=async()=>{
-      if(saved)return;saved=true;
-      const h=parseInt(ih.value)||0,m=parseInt(im.value)||0;
-      const mins=h*60+m;
-      if(mins<=0){el.textContent=fmtHM(origH*60+origM);return;}
-      el.textContent=fmtHM(mins);
-      await updateLog(logId,{mins});
-      await renderLog();
-    };
-    const onKey=e=>{if(e.key==='Enter'){e.preventDefault();done();}if(e.key==='Escape'){saved=true;el.textContent=fmtHM(origH*60+origM);}};
-    ih.addEventListener('keydown',onKey);im.addEventListener('keydown',onKey);
-    const onBlur=()=>setTimeout(()=>{if(!el.contains(document.activeElement))done();},50);
-    ih.addEventListener('blur',onBlur);im.addEventListener('blur',onBlur);
-  }
+function editTime(logId,origH,origM,origStart,origStop,forceRange){openEditOverlay(logId,origH,origM,origStart,origStop);}
+function openEditOverlay(logId,origH,origM,origStart,origStop){
+  const overlay=document.getElementById('edit-overlay');
+  overlay._logId=logId;
+  overlay._origH=parseInt(origH)||0;
+  overlay._origM=parseInt(origM)||0;
+  // Vyplň pole
+  const startVal=origStart&&origStart.includes(':')?origStart:'';
+  const stopVal=origStop&&origStop.includes(':')?origStop:'';
+  document.getElementById('eo-start').value=startVal;
+  document.getElementById('eo-stop').value=stopVal;
+  document.getElementById('eo-mins').value=(parseInt(origH)||0)*60+(parseInt(origM)||0);
+  // Při změně od/do automaticky přepočítej minuty
+  const calcMins=()=>{
+    const s=document.getElementById('eo-start').value;
+    const e=document.getElementById('eo-stop').value;
+    if(s&&e){
+      const[sh,sm]=s.split(':').map(Number);
+      const[eh,em]=e.split(':').map(Number);
+      let m=(eh*60+em)-(sh*60+sm);
+      if(m<=0)m+=24*60;
+      document.getElementById('eo-mins').value=Math.max(1,m);
+    }
+  };
+  document.getElementById('eo-start').onchange=calcMins;
+  document.getElementById('eo-stop').onchange=calcMins;
+  // Při změně minut přepočítej stop
+  document.getElementById('eo-mins').oninput=()=>{
+    const s=document.getElementById('eo-start').value;
+    const mins=parseInt(document.getElementById('eo-mins').value)||0;
+    if(s&&s.includes(':')&&mins>0){
+      const[sh,sm]=s.split(':').map(Number);
+      const newStop=sh*60+sm+mins;
+      document.getElementById('eo-stop').value=String(Math.floor(newStop/60)%24).padStart(2,'0')+':'+String(newStop%60).padStart(2,'0');
+    }
+  };
+  overlay.classList.add('on');
+  // Focus na správné pole
+  setTimeout(()=>{
+    if(startVal)document.getElementById('eo-mins').focus();
+    else document.getElementById('eo-start').focus();
+  },50);
 }
+
+function closeEditOverlay(){
+  document.getElementById('edit-overlay').classList.remove('on');
+}
+
+async function saveEditOverlay(){
+  const overlay=document.getElementById('edit-overlay');
+  const logId=overlay._logId;
+  const mins=parseInt(document.getElementById('eo-mins').value)||0;
+  const startVal=document.getElementById('eo-start').value;
+  const stopVal=document.getElementById('eo-stop').value;
+  if(mins<=0){closeEditOverlay();return;}
+  const changes={mins};
+  if(startVal&&startVal.includes(':'))changes.startHHMM=startVal;
+  if(stopVal&&stopVal.includes(':'))changes.stopHHMM=stopVal;
+  closeEditOverlay();
+  await updateLog(logId,changes);
+  await renderLog();
+}
+
+// Zavři overlay klikem mimo box
+document.getElementById('edit-overlay').addEventListener('click',function(e){
+  if(e.target===this)closeEditOverlay();
+});
+
+
 
 init();
 </script>
