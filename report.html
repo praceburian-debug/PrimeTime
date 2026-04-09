@@ -127,6 +127,22 @@
   @keyframes spin{to{transform:rotate(360deg);}}
   .lt2{font-size:13px;color:var(--m);}
   .empty{padding:2rem;text-align:center;color:var(--m);font-size:13px;}
+  /* Edit overlay */
+  #edit-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200;display:none;align-items:center;justify-content:center;}
+  #edit-overlay.on{display:flex;}
+  .edit-box{background:var(--s);border:1px solid var(--b2);border-radius:12px;padding:16px;width:260px;box-shadow:0 8px 32px rgba(0,0,0,.5);}
+  .edit-box-title{font-size:12px;font-weight:600;color:var(--m);text-transform:uppercase;letter-spacing:.07em;margin-bottom:12px;}
+  .edit-row{display:flex;flex-direction:column;gap:3px;margin-bottom:10px;}
+  .edit-label{font-size:10px;color:var(--m);font-weight:500;}
+  .edit-field{font-family:var(--fm);font-size:13px;background:var(--s2);border:1px solid var(--b2);border-radius:6px;padding:7px 10px;color:var(--txt);outline:none;width:100%;}
+  .edit-field:focus{border-color:var(--ac);}
+  .edit-sep-row{display:flex;gap:8px;}
+  .edit-sep-row .edit-row{flex:1;}
+  .edit-actions{display:flex;gap:8px;margin-top:4px;}
+  .edit-save{flex:1;padding:8px;background:var(--ac);color:white;border:none;border-radius:7px;font-size:12px;font-weight:600;font-family:var(--f);cursor:pointer;}
+  .edit-save:hover{background:#7C6AF0;}
+  .edit-cancel{padding:8px 12px;background:transparent;color:var(--m);border:1px solid var(--b2);border-radius:7px;font-size:12px;font-family:var(--f);cursor:pointer;}
+  .edit-cancel:hover{background:var(--s2);color:var(--txt);}
   .erbox{background:rgba(214,48,49,.08);border:1px solid rgba(214,48,49,.2);border-radius:10px;padding:1rem 1.25rem;color:#FF7675;font-size:13px;margin-bottom:1rem;}
   /* Admin docházka */
   .att-table{width:100%;border-collapse:collapse;}
@@ -269,6 +285,20 @@
       </div>
     </div>
 
+  </div>
+</div>
+<div id="edit-overlay">
+  <div class="edit-box">
+    <div class="edit-box-title">Upravit čas</div>
+    <div class="edit-sep-row">
+      <div class="edit-row"><span class="edit-label">Od</span><input type="time" class="edit-field" id="eo-start"></div>
+      <div class="edit-row"><span class="edit-label">Do</span><input type="time" class="edit-field" id="eo-stop"></div>
+    </div>
+    <div class="edit-row"><span class="edit-label">Trvání (min)</span><input type="number" class="edit-field" id="eo-mins" min="1" max="999"></div>
+    <div class="edit-actions">
+      <button class="edit-cancel" onclick="closeEditOverlay()">Zrušit</button>
+      <button class="edit-save" onclick="saveEditOverlay()">Uložit</button>
+    </div>
   </div>
 </div>
 <script>
@@ -560,7 +590,7 @@ function rLog(){
           +'<div class="e-desc" onclick="rEditDesc(this,\''+l.id+'\')">'+(l.desc||'—')+'</div>'
           +'<div class="e-meta">'+l.memberName+' · '+fmtDateShort(l.date)+'</div>'
         +'</div>'
-        +'<div class="e-time" onclick="rEditTime(this,\''+l.id+'\','+h+','+m+')">'+fmtHM(l.mins)+'</div>'
+        +'<div class="e-time" onclick="rEditTime(this,\''+l.id+'\','+h+','+m+',\''+( l.startHHMM||'')+'\',\''+( l.stopHHMM||'')+'\')">'+fmtHM(l.mins)+(l.startHHMM&&l.stopHHMM?'<div style="font-size:9px;color:var(--m);margin-top:1px;font-family:var(--fm)">'+l.startHHMM+'–'+l.stopHHMM+'</div>':'')+'</div>'
         +'</div>';
     }).join('');
     return'<div>'
@@ -776,6 +806,56 @@ function openAttPrint(){
   const b64=btoa(unescape(encodeURIComponent(JSON.stringify(printData))));
   window.open('./report-print.html#'+b64,'_blank');
 }
+
+// ── Edit overlay ──────────────────────────────────────────
+let _overlayUpdateFn=null;
+
+function openEditOverlay(logId,origH,origM,startH,stopH,updateFn){
+  const overlay=document.getElementById('edit-overlay');
+  overlay._logId=logId;
+  _overlayUpdateFn=updateFn;
+  document.getElementById('eo-start').value=startH||'';
+  document.getElementById('eo-stop').value=stopH||'';
+  document.getElementById('eo-mins').value=(parseInt(origH)||0)*60+(parseInt(origM)||0);
+  const calcMins=()=>{
+    const s=document.getElementById('eo-start').value;
+    const e=document.getElementById('eo-stop').value;
+    if(s&&e){
+      const[sh,sm]=s.split(':').map(Number);
+      const[eh,em]=e.split(':').map(Number);
+      let m=(eh*60+em)-(sh*60+sm);
+      if(m<=0)m+=24*60;
+      document.getElementById('eo-mins').value=Math.max(1,m);
+    }
+  };
+  document.getElementById('eo-start').onchange=calcMins;
+  document.getElementById('eo-stop').onchange=calcMins;
+  document.getElementById('eo-mins').oninput=()=>{
+    const s=document.getElementById('eo-start').value;
+    const mins=parseInt(document.getElementById('eo-mins').value)||0;
+    if(s&&s.includes(':')&&mins>0){
+      const[sh,sm]=s.split(':').map(Number);
+      const newStop=sh*60+sm+mins;
+      document.getElementById('eo-stop').value=String(Math.floor(newStop/60)%24).padStart(2,'0')+':'+String(newStop%60).padStart(2,'0');
+    }
+  };
+  overlay.classList.add('on');
+  setTimeout(()=>document.getElementById('eo-mins').focus(),50);
+}
+function closeEditOverlay(){document.getElementById('edit-overlay').classList.remove('on');}
+async function saveEditOverlay(){
+  const logId=document.getElementById('edit-overlay')._logId;
+  const mins=parseInt(document.getElementById('eo-mins').value)||0;
+  const startVal=document.getElementById('eo-start').value;
+  const stopVal=document.getElementById('eo-stop').value;
+  if(mins<=0){closeEditOverlay();return;}
+  const changes={mins};
+  if(startVal&&startVal.includes(':'))changes.startHHMM=startVal;
+  if(stopVal&&stopVal.includes(':'))changes.stopHHMM=stopVal;
+  closeEditOverlay();
+  if(_overlayUpdateFn)await _overlayUpdateFn(logId,changes);
+}
+document.getElementById('edit-overlay').addEventListener('click',function(e){if(e.target===this)closeEditOverlay();});
 
 init();
 </script>
