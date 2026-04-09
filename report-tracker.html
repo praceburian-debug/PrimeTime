@@ -116,6 +116,10 @@
   .att-del{background:none;border:none;color:var(--m);cursor:pointer;font-size:14px;padding:2px 5px;border-radius:3px;transition:all .1s;}
   .att-del:hover{background:rgba(214,48,49,.14);color:#FF7675;}
   .att-sum{background:rgba(108,92,231,.06);border-top:2px solid rgba(108,92,231,.2);}
+  .att-month-pills{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:1rem;}
+  .att-month-pill{font-size:11px;font-weight:500;padding:3px 10px;border-radius:6px;background:var(--s2);border:1px solid var(--b2);color:var(--m);cursor:pointer;transition:all .15s;}
+  .att-month-pill.a{background:var(--ac);color:white;border-color:var(--ac);}
+  .att-month-pill:hover:not(.a){background:var(--s3);color:var(--txt);}
   .att-sum td{font-weight:600;padding:10px 1rem;}
 </style>
 </head>
@@ -186,6 +190,7 @@
           <button class="btn-add-day" onclick="addAttDay()">+ Přidat den</button>
         </div>
       </div>
+      <div class="att-month-pills" id="att-month-pills"></div>
       <div class="tw">
         <table class="att-table">
           <thead><tr>
@@ -369,6 +374,7 @@ function exportCSV(){
 // ── Docházka ──────────────────────────────────────────────
 const ATT_KEY='pt-attendance';
 let attData=[];
+let attSelectedMonth='';
 
 function setTab(tab,btn){
   document.querySelectorAll('.tab').forEach(b=>b.classList.remove('a'));
@@ -451,11 +457,29 @@ function fmtMins(m){
 
 function genAttId(){return 'a'+Date.now().toString(36);}
 
+function renderAttPills(){
+  const months=[...new Set(attData.map(r=>r.date.slice(0,7)))].sort().reverse();
+  const current=new Date().toISOString().slice(0,7);
+  if(!attSelectedMonth||!months.includes(attSelectedMonth)){
+    attSelectedMonth=months.includes(current)?current:(months[0]||current);
+  }
+  const pills=document.getElementById('att-month-pills');
+  if(pills){
+    pills.innerHTML=months.map(m=>'<span class="att-month-pill'+(m===attSelectedMonth?' a':'')+'" onclick="selectAttMonth(\''+m+'\')">'
+      +new Date(m+'-01').toLocaleDateString('cs-CZ',{month:'long',year:'numeric'})+'</span>').join('');
+  }
+}
+
+function selectAttMonth(m){attSelectedMonth=m;renderAtt();}
+
 function renderAtt(){
+  renderAttPills();
   const tbody=document.getElementById('att-body');
-  const sorted=[...attData].sort((a,b)=>b.date.localeCompare(a.date));
+  // Filtruj podle vybraného měsíce
+  const filtered=attData.filter(r=>r.date.slice(0,7)===attSelectedMonth);
+  const sorted=[...filtered].sort((a,b)=>b.date.localeCompare(a.date));
   if(!sorted.length){
-    tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--m);padding:2rem;font-size:13px">Žádné záznamy — přidej první den tlačítkem výše</td></tr>';
+    tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--m);padding:2rem;font-size:13px">'+(attData.length?'Žádné záznamy v tomto měsíci':'Žádné záznamy — přidej první den tlačítkem výše')+'</td></tr>';
     document.getElementById('att-sum').style.display='none';
     return;
   }
@@ -473,7 +497,7 @@ function renderAtt(){
       +'</tr>';
   }).join('');
   // Součet
-  const totalMins=attData.reduce((s,r)=>{const m=attMins(r);return s+(m||0);},0);
+  const totalMins=sorted.reduce((s,r)=>{const m=attMins(r);return s+(m||0);},0);
   document.getElementById('att-total-sum').textContent=fmtMins(totalMins);
   document.getElementById('att-sum').style.display='';
 }
