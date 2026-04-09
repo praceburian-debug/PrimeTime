@@ -224,6 +224,11 @@ const COLS=['#6C5CE7','#00B894','#E17055','#0984E3','#FDCB6E','#A29BFE','#D63031
 function mc(id){let h=0;for(const c of String(id))h=(h*31+c.charCodeAt(0))&0xffffffff;return COLS[Math.abs(h)%COLS.length];}
 function ini(n){const p=(n||'?').trim().split(' ');return(p[0][0]+(p[1]?.[0]||'')).toUpperCase();}
 function fmtHM(m){const h=Math.floor(m/60),mm=m%60;return h>0?h+'h '+mm+'m':mm+'m';}
+function fmtDateShort(iso){
+  if(!iso)return'';
+  const d=new Date(iso+'T00:00:00');
+  return String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0')+'.'+d.getFullYear();
+}
 let allLogs=[],memberId=null,memberName='',period='today',customFrom='',customTo='';
 let openGroups={};
 
@@ -286,7 +291,7 @@ function render(){
       return'<div class="entry-row">'
         +'<div class="e-info">'
           +'<div class="e-desc" onclick="rEditDesc(this,\''+l.id+'\')">'+(l.desc||'—')+'</div>'
-          +'<div class="e-meta">'+l.date+'</div>'
+          +'<div class="e-meta">'+fmtDateShort(l.date)+'</div>'
         +'</div>'
         +'<div class="e-time" onclick="rEditTime(this,\''+l.id+'\','+h+','+m+')">'+fmtHM(l.mins)+'</div>'
         +'</div>';
@@ -459,7 +464,7 @@ function renderAtt(){
     const incomplete=r.arrival&&!r.departure;
     const id=r.id;
     return'<tr>'
-      +'<td class="att-cell" onclick="attEdit(this,\''+id+'\',\'date\')">'+r.date+'</td>'
+      +'<td class="att-cell" onclick="attEdit(this,\''+id+'\',\'date\')">'+fmtDateShort(r.date)+'</td>'
       +'<td class="att-cell" onclick="attEdit(this,\''+id+'\',\'arrival\')">'+(r.arrival||'—')+'</td>'
       +'<td class="att-cell" onclick="attEdit(this,\''+id+'\',\'departure\')">'+(r.departure||(incomplete?'<span style="color:#FDCB6E;font-size:11px">probíhá…</span>':'—'))+'</td>'
       +'<td class="att-cell" onclick="attEdit(this,\''+id+'\',\'lunch\')">'+(r.lunch?r.lunch+' min':'—')+'</td>'

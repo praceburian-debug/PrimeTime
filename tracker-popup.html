@@ -62,6 +62,7 @@
   .ld:hover{color:var(--ac2);}
   .lm{font-size:10px;color:var(--m);margin-top:1px;}
   .lt{font-family:var(--fm);font-size:10px;color:var(--ac2);flex-shrink:0;font-weight:500;cursor:text;}
+  .lt-wrap{display:flex;flex-direction:column;align-items:flex-end;flex-shrink:0;}
   .lt:hover{color:var(--ac);}
   .ldel{background:none;border:none;color:var(--m);cursor:pointer;font-size:13px;padding:1px 3px;border-radius:3px;line-height:1;flex-shrink:0;transition:all .1s;}
   .ldel:hover{background:var(--rb);color:var(--rt);}
@@ -78,6 +79,8 @@
   #toast.on{opacity:1;transform:translateX(-50%) translateY(0);}
   .rdot{display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--gr);margin-right:4px;vertical-align:middle;animation:blink 1.4s infinite;}
   @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+  .lt-range{font-family:var(--fm);font-size:9px;color:var(--m);margin-top:1px;}
+  .edit-time-range{font-family:var(--fm);font-size:9px;background:var(--s2);border:1px solid var(--ac);border-radius:3px;padding:1px 3px;color:var(--txt);outline:none;width:38px;text-align:center;}
 </style>
 </head>
 <body>
@@ -150,6 +153,11 @@ function mc(id){let h=0;for(const c of String(id))h=(h*31+c.charCodeAt(0))&0xfff
 function ini(n){const p=(n||'?').trim().split(' ');return(p[0][0]+(p[1]?.[0]||'')).toUpperCase();}
 function fmtS(s){return[Math.floor(s/3600),Math.floor((s%3600)/60),s%60].map(v=>String(v).padStart(2,'0')).join(':');}
 function fmtHM(m){const h=Math.floor(m/60),mm=m%60;return h>0?h+'h '+mm+'m':mm+'m';}
+function fmtDateShort(iso){
+  if(!iso)return'';
+  const d=new Date(iso);
+  return String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0')+'.'+d.getFullYear();
+}
 function toast(msg){const e=document.getElementById('toast');e.textContent=msg;e.classList.add('on');setTimeout(()=>e.classList.remove('on'),2400);}
 function genId(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
 
@@ -240,10 +248,12 @@ function resumeTimer(){
 }
 async function stopTimer(){
   clearInterval(tint);
+  const stoppedAt=new Date();
+  const startedAt=new Date(Date.now()-tsecs*1000);
   await api.remove('member','private','tt-running-'+cardId);
   await api.remove('member','private','pt-active-card');
   const mins=Math.max(1,Math.round(tsecs/60));
-  await saveLog(mins,'');
+  await saveLog(mins,'',startedAt,stoppedAt);
   document.getElementById('clock').classList.remove('r');
   document.getElementById('btn-stop').classList.add('h');document.getElementById('btn-s').classList.remove('h');document.getElementById('btn-r').disabled=false;
   document.getElementById('csub').textContent='Zalogováno '+fmtHM(mins);
@@ -265,15 +275,36 @@ async function addManual(){
   await renderLog();
 }
 
-async function saveLog(mins,desc){
+function toHHMM(date){
+  if(!date)return'';
+  return String(date.getHours()).padStart(2,'0')+':'+String(date.getMinutes()).padStart(2,'0');
+}
+function fmtDate(date){
+  if(!date)return'';
+  return String(date.getDate()).padStart(2,'0')+'.'+String(date.getMonth()+1).padStart(2,'0')+'.'+date.getFullYear();
+}
+
+async function saveLog(mins,desc,startedAt,stoppedAt){
+  const entry={
+    memberId:member.id,memberName:member.fullName,
+    boardId,boardName,cardId,cardName,cardLabels,
+    listName:cardListName,mins,desc:desc||'',
+    date:new Date().toISOString().slice(0,10),
+    ...(startedAt&&stoppedAt?{
+      startedAt:startedAt.toISOString(),
+      stoppedAt:stoppedAt.toISOString(),
+      startHHMM:toHHMM(startedAt),
+      stopHHMM:toHHMM(stoppedAt),
+    }:{}),
+  };
   if(IN_TRELLO){
     const res=await fetch(BACKEND+'/api/logs',{
       method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({memberId:member.id,memberName:member.fullName,boardId,boardName,cardId,cardName,cardLabels,listName:cardListName,mins,desc:desc||'',date:new Date().toISOString().slice(0,10)}),
+      body:JSON.stringify(entry),
     });
     if(!res.ok){const d=await res.json();throw new Error(d.error||'Chyba uložení');}
   }else{
-    ML.push({id:genId(),memberId:member.id,memberName:member.fullName,boardId,boardName,cardId,cardName,cardLabels,mins,desc:desc||'',date:new Date().toISOString().slice(0,10)});
+    ML.push({id:genId(),...entry});
   }
 }
 
@@ -338,26 +369,56 @@ function editDesc(el,logId){
 }
 
 // ── Inline editace času — data-r místo id (žádná kolize) ─
-function editTime(logId,origH,origM){
+function editTime(logId,origH,origM,origStart,origStop){
   const el=document.getElementById('time-'+logId);
   if(!el||el.querySelector('input'))return;
-  el.innerHTML='<input class="edit-time" data-r="h" type="number" min="0" max="99" value="'+origH+'"><span class="edit-sep">:</span><input class="edit-time" data-r="m" type="number" min="0" max="59" value="'+String(origM).padStart(2,'0')+'">';
-  const ih=el.querySelector('[data-r="h"]'),im=el.querySelector('[data-r="m"]');
-  ih.focus();ih.select();
-  let saved=false;
-  const done=async()=>{
-    if(saved)return;saved=true;
-    const h=parseInt(ih.value)||0,m=parseInt(im.value)||0;
-    const mins=h*60+m;
-    if(mins<=0){el.textContent=fmtHM(origH*60+origM);return;}
-    el.textContent=fmtHM(mins);
-    await updateLog(logId,{mins});
-    await renderLog();
-  };
-  const onKey=e=>{if(e.key==='Enter'){e.preventDefault();done();}if(e.key==='Escape'){saved=true;el.textContent=fmtHM(origH*60+origM);}};
-  ih.addEventListener('keydown',onKey);im.addEventListener('keydown',onKey);
-  const onBlur=()=>setTimeout(()=>{if(!el.contains(document.activeElement))done();},50);
-  ih.addEventListener('blur',onBlur);im.addEventListener('blur',onBlur);
+  const hasRange=origStart&&origStop;
+  if(hasRange){
+    // Editace přes od-do časy
+    el.innerHTML='<input class="edit-time-range" data-r="s" type="time" value="'+origStart+'">'
+      +'<span class="edit-sep" style="font-size:9px">–</span>'
+      +'<input class="edit-time-range" data-r="e" type="time" value="'+origStop+'">';
+    const is=el.querySelector('[data-r="s"]'),ie=el.querySelector('[data-r="e"]');
+    is.focus();
+    let saved=false;
+    const done=async()=>{
+      if(saved)return;saved=true;
+      const sv=is.value,ev=ie.value;
+      if(!sv||!ev){el.textContent=fmtHM(origH*60+origM);return;}
+      const [sh,sm]=sv.split(':').map(Number);
+      const [eh,em]=ev.split(':').map(Number);
+      let mins=(eh*60+em)-(sh*60+sm);
+      if(mins<=0)mins+=24*60; // přes půlnoc
+      mins=Math.max(1,mins);
+      el.textContent=fmtHM(mins);
+      await updateLog(logId,{mins,startHHMM:sv,stopHHMM:ev});
+      await renderLog();
+    };
+    const onKey=e=>{if(e.key==='Enter'){e.preventDefault();done();}if(e.key==='Escape'){saved=true;el.textContent=fmtHM(origH*60+origM);}};
+    is.addEventListener('keydown',onKey);ie.addEventListener('keydown',onKey);
+    const onBlur=()=>setTimeout(()=>{if(!el.contains(document.activeElement))done();},50);
+    is.addEventListener('blur',onBlur);ie.addEventListener('blur',onBlur);
+    is.addEventListener('change',()=>setTimeout(()=>ie.focus(),50));
+  }else{
+    // Klasická editace přes h:m
+    el.innerHTML='<input class="edit-time" data-r="h" type="number" min="0" max="99" value="'+origH+'"><span class="edit-sep">:</span><input class="edit-time" data-r="m" type="number" min="0" max="59" value="'+String(origM).padStart(2,'0')+'">';
+    const ih=el.querySelector('[data-r="h"]'),im=el.querySelector('[data-r="m"]');
+    ih.focus();ih.select();
+    let saved=false;
+    const done=async()=>{
+      if(saved)return;saved=true;
+      const h=parseInt(ih.value)||0,m=parseInt(im.value)||0;
+      const mins=h*60+m;
+      if(mins<=0){el.textContent=fmtHM(origH*60+origM);return;}
+      el.textContent=fmtHM(mins);
+      await updateLog(logId,{mins});
+      await renderLog();
+    };
+    const onKey=e=>{if(e.key==='Enter'){e.preventDefault();done();}if(e.key==='Escape'){saved=true;el.textContent=fmtHM(origH*60+origM);}};
+    ih.addEventListener('keydown',onKey);im.addEventListener('keydown',onKey);
+    const onBlur=()=>setTimeout(()=>{if(!el.contains(document.activeElement))done();},50);
+    ih.addEventListener('blur',onBlur);im.addEventListener('blur',onBlur);
+  }
 }
 
 init();

@@ -289,6 +289,11 @@ const COLS=['#6C5CE7','#00B894','#E17055','#0984E3','#FDCB6E','#A29BFE','#D63031
 function mc(id){let h=0;for(const c of String(id))h=(h*31+c.charCodeAt(0))&0xffffffff;return COLS[Math.abs(h)%COLS.length];}
 function ini(n){const p=(n||'?').trim().split(' ');return(p[0][0]+(p[1]?.[0]||'')).toUpperCase();}
 function fmtHM(m){const h=Math.floor(m/60),mm=m%60;return h>0?h+'h '+mm+'m':mm+'m';}
+function fmtDateShort(iso){
+  if(!iso)return'';
+  const d=new Date(iso+'T00:00:00');
+  return String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0')+'.'+d.getFullYear();
+}
 
 let allLogs=[],cardNames={},cardLbls={},period='month',customFrom='',customTo='';
 let currentBoardId=null,allBoards=[];
@@ -553,7 +558,7 @@ function rLog(){
         +'<div class="e-av" style="background:'+c+'">'+ini(l.memberName)+'</div>'
         +'<div class="e-info">'
           +'<div class="e-desc" onclick="rEditDesc(this,\''+l.id+'\')">'+(l.desc||'—')+'</div>'
-          +'<div class="e-meta">'+l.memberName+' · '+l.date+'</div>'
+          +'<div class="e-meta">'+l.memberName+' · '+fmtDateShort(l.date)+'</div>'
         +'</div>'
         +'<div class="e-time" onclick="rEditTime(this,\''+l.id+'\','+h+','+m+')">'+fmtHM(l.mins)+'</div>'
         +'</div>';
