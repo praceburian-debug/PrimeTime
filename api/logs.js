@@ -31,12 +31,18 @@ async function getTotal(req, res) {
 }
 
 async function createLog(req, res) {
-  const { memberId, memberName, boardId, boardName, cardId, cardName, cardLabels, mins, desc, date } = req.body || {};
+  const { memberId, memberName, boardId, boardName, cardId, cardName, cardLabels, mins, desc, date, listName, startedAt, stoppedAt, startHHMM, stopHHMM } = req.body || {};
   if (!memberId || !cardId || !mins) return res.status(400).json({ error: 'Chybí povinná pole' });
   const safeBoardId = boardId || 'unknown';
 
   const logId = Date.now().toString(36) + Math.random().toString(36).slice(2,6);
-  const log = { id:logId, memberId, memberName, boardId:safeBoardId, boardName:boardName||safeBoardId, cardId, cardName:cardName||cardId, cardLabels:cardLabels||[], mins, desc:desc||'', date:date||new Date().toISOString().slice(0,10), createdAt:new Date().toISOString() };
+  const log = { id:logId, memberId, memberName, boardId:safeBoardId, boardName:boardName||safeBoardId, cardId, cardName:cardName||cardId, cardLabels:cardLabels||[], mins, desc:desc||'', date:date||new Date().toISOString().slice(0,10), createdAt:new Date().toISOString(),
+    ...(listName?{listName}:{}),
+    ...(startedAt?{startedAt}:{}),
+    ...(stoppedAt?{stoppedAt}:{}),
+    ...(startHHMM?{startHHMM}:{}),
+    ...(stopHHMM?{stopHHMM}:{}),
+  };
 
   await redis.set(`log:${logId}`, JSON.stringify(log), { ex: 60*60*24*365*2 });
   await redis.zadd(`board-logs:${safeBoardId}`, { score: Date.now(), member: logId });
@@ -97,7 +103,7 @@ async function updateLog(req, res) {
   if (!raw) return res.status(404).json({ error: 'Log nenalezen' });
 
   const log = typeof raw === 'string' ? JSON.parse(raw) : raw;
-  const allowed = ['desc', 'mins'];
+  const allowed = ['desc', 'mins', 'startHHMM', 'stopHHMM', 'startedAt', 'stoppedAt'];
   const update = {};
   allowed.forEach(k => { if (changes[k] !== undefined) update[k] = changes[k]; });
 
