@@ -47,29 +47,23 @@ TrelloPowerUp.initialize({
   'card-detail-badges':async(t)=>{
     if(!await canTrack(t))return[];
     const[card,mid,admin]=await Promise.all([t.card('id'),getMid(t),isAdmin(t)]);
-    const board=await t.board('id');
     const running=await t.get('member','private','tt-running-'+card.id);
 
-    let allM=0,myM=0;
+    // Použij cache endpoint — 1 rychlý Redis GET místo načítání všech logů
+    let allM=0;
     try{
-      const res=await fetch(`${BACKEND}/api/logs?boardId=${board.id}&cardId=${card.id}`);
-      const {logs=[]}=await res.json();
-      allM=logs.reduce((s,l)=>s+l.mins,0);
-      myM=logs.filter(l=>l.memberId===mid).reduce((s,l)=>s+l.mins,0);
+      const res=await fetch(`${BACKEND}/api/logs-total?cardId=${card.id}`);
+      const{total=0}=await res.json();
+      allM=total;
     }catch{}
 
     const isRun=!!(running?.startedAt);
     const open=(t)=>t.popup({title:'PrimeTime',url:'./tracker-popup.html',height:560});
     const badges=[];
     if(isRun){
-      badges.push({title:'Časovač běží – klikni',text:'● '+fmtRun(running.startedAt),color:'green',icon:ICON_TIMER,callback:open,refresh:30}); // 30s
-    }else if(admin){
-      badges.push({title:allM>0?'Celkový čas týmu':'Spustit sledování',text:allM>0?'▶ '+fmtHM(allM):'▶ Spustit',color:allM>0?'purple':null,icon:ICON_TIMER,callback:open});
+      badges.push({title:'Časovač běží – klikni',text:'● '+fmtRun(running.startedAt),color:'green',icon:ICON_TIMER,callback:open,refresh:30});
     }else{
-      badges.push({title:myM>0?'Můj čas':'Spustit sledování',text:myM>0?'▶ '+fmtHM(myM):'▶ Spustit',color:myM>0?'green':null,icon:ICON_TIMER,callback:open});
-    }
-    if(admin&&myM>0&&allM!==myM){
-      badges.push({title:'Můj čas',text:'👤 '+fmtHM(myM),color:'green',icon:ICON_CLOCK,callback:open});
+      badges.push({title:allM>0?'Celkový čas':'Spustit sledování',text:allM>0?'▶ '+fmtHM(allM):'▶ Spustit',color:allM>0?'purple':null,icon:ICON_TIMER,callback:open});
     }
     return badges;
   },
