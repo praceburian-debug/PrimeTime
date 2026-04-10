@@ -42,17 +42,7 @@ TrelloPowerUp.initialize({
 
   'show-authorization':(t)=>t.popup({title:'PrimeTime – Autorizace',url:'./authorize.html',height:200}),
 
-  // card-badges — pouze cache, žádný fallback na plný výpočet
-  'card-badges':async(t)=>{
-    if(!await canTrack(t))return[];
-    const card=await t.card('id');
-    try{
-      const res=await fetch(`${BACKEND}/api/logs-total?cardId=${card.id}`);
-      const{total=0}=await res.json();
-      if(!total)return[];
-      return[{icon:ICON_CLOCK,text:fmtHM(total),color:'purple'}];
-    }catch{return[];}
-  },
+  'card-badges':()=>[],
 
   'card-detail-badges':async(t)=>{
     if(!await canTrack(t))return[];
