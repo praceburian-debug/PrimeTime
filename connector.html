@@ -11,7 +11,6 @@ const BACKEND     = 'https://prime-time.vercel.app';
 const ICON_TIMER  = 'https://cdn.jsdelivr.net/npm/lucide-static@0.441.0/icons/timer.svg';
 const ICON_CLOCK  = 'https://cdn.jsdelivr.net/npm/lucide-static@0.441.0/icons/clock.svg';
 const ICON_CHART  = 'https://cdn.jsdelivr.net/npm/lucide-static@0.441.0/icons/bar-chart-2.svg';
-const ICON_COMMENT= 'https://cdn.jsdelivr.net/npm/lucide-static@0.441.0/icons/message-square.svg';
 
 // Cache pro getPerms a getMid — TTL 60s, výrazně sníží počet Trello API volání
 const _cache={};
@@ -66,17 +65,6 @@ TrelloPowerUp.initialize({
       badges.push({title:allM>0?'Celkový čas':'Spustit sledování',text:allM>0?'▶ '+fmtHM(allM):'▶ Spustit',color:allM>0?'purple':null,icon:ICON_TIMER,callback:open});
     }
     return badges;
-  },
-
-  'card-buttons':async(t)=>{
-    const jobs=await t.get('member','private','pt-jobs')||[];
-    const card=await t.card('id');
-    const pending=jobs.filter(j=>j.cardId===card.id&&new Date(j.sendAt)>new Date());
-    return[{
-      icon:ICON_COMMENT,
-      text:pending.length>0?`Naplánovat komentář (${pending.length})`:'Naplánovat komentář',
-      callback:(t)=>t.popup({title:'PrimeTime – Naplánovat komentář',url:'./schedule-popup.html',height:520}),
-    }];
   },
 
   // board-buttons

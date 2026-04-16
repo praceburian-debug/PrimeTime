@@ -5,7 +5,6 @@
   "type": "module",
   "engines": { "node": ">=20" },
   "dependencies": {
-    "@upstash/redis": "^1.28.0",
-    "@upstash/qstash": "^2.7.0"
+    "@upstash/redis": "^1.28.0"
   }
 }

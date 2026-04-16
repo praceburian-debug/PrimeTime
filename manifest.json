@@ -1,12 +1,11 @@
 {
   "name": "PrimeTime",
-  "details": "Time tracking a naplánované komentáře pro Trello.",
+  "details": "Time tracking pro Trello – sleduj čas přímo na kartách a zobrazuj reporty.",
   "capabilities": [
     "authorization-status",
     "show-authorization",
     "card-badges",
     "card-detail-badges",
-    "card-buttons",
     "board-buttons",
     "show-settings"
   ],
