@@ -401,13 +401,28 @@ function setTab(tab,btn){
   btn.classList.add('a');
   document.getElementById('tab-time').style.display=tab==='time'?'block':'none';
   document.getElementById('tab-att').style.display=tab==='att'?'block':'none';
-  if(tab==='att'){loadAtt();if(memberId)syncAttSummary();}
+  if(tab==='att')loadAtt();
 }
 
+// Docházka žije na backendu. Dřív byla v Trello member/private, kde zaplnila limit
+// 4096 znaků sdílený se stavem časovače — při načtení ji jednou přeneseme a z Trella smažeme.
 async function loadAtt(){
   if(IN_TRELLO){
-    const d=await _t.get('member','private',ATT_KEY);
-    attData=d||[];
+    const board=await _t.board('id');
+    const res=await fetch(`${BACKEND}/api/attendance?memberId=${memberId}&boardId=${board.id}`);
+    attData=(await res.json()).records||[];
+    const legacy=await _t.get('member','private',ATT_KEY);
+    if(Array.isArray(legacy)&&legacy.length){
+      const ids=new Set(attData.map(r=>r.id));
+      attData=[...attData,...legacy.filter(r=>!ids.has(r.id))];
+      await saveAtt();
+      await _t.remove('member','private',ATT_KEY);
+      try{
+        let old=await _t.get('board','shared','pt-att-summaries');
+        if(typeof old==='string'){try{old=JSON.parse(old);}catch{old=null;}}
+        if(old&&old[memberId]){delete old[memberId];await _t.set('board','shared','pt-att-summaries',old);}
+      }catch(e){console.error('pt-att-summaries cleanup:',e);}
+    }
   }else{
     const today=new Date().toISOString().slice(0,10);
     const yesterday=new Date(Date.now()-86400000).toISOString().slice(0,10);
@@ -419,46 +434,14 @@ async function loadAtt(){
   renderAtt();
 }
 
+// Ukládá celou docházku; boardId zařadí člena do admin reportu této nástěnky
 async function saveAtt(){
   if(IN_TRELLO){
-    await _t.set('member','private',ATT_KEY,attData);
-    // Synchronizuj měsíční souhrny do board shared — admin je může číst
-    await syncAttSummary();
+    const board=await _t.board('id');
+    const res=await fetch(BACKEND+'/api/attendance',{method:'PUT',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({memberId,memberName,boardId:board.id,records:attData})});
+    if(!res.ok)throw new Error('Docházku se nepodařilo uložit');
   }
-}
-
-async function syncAttSummary(){
-  if(!IN_TRELLO)return;
-  if(!memberId)return;
-
-  // Sestav souhrny per měsíc: { 'YYYY-MM': totalMins }
-  const summary={};
-  attData.forEach(r=>{
-    const m=attMins(r);
-    if(!m)return;
-    const month=r.date.slice(0,7);
-    summary[month]=(summary[month]||0)+m;
-  });
-
-  // Sestav také detailní záznamy per měsíc pro admin report
-  // { 'YYYY-MM': [ {date, arrival, departure, lunch, mins} ] }
-  const records={};
-  attData.forEach(r=>{
-    const month=r.date.slice(0,7);
-    if(!records[month])records[month]=[];
-    records[month].push({
-      date:r.date,
-      arrival:r.arrival||'',
-      departure:r.departure||'',
-      lunch:r.lunch||0,
-      mins:attMins(r)||0,
-    });
-  });
-
-  let existing=await _t.get('board','shared','pt-att-summaries')||{};
-  if(typeof existing==='string'){try{existing=JSON.parse(existing);}catch{existing={};}}
-  existing[memberId]={memberName,summary,records,updatedAt:new Date().toISOString()};
-  await _t.set('board','shared','pt-att-summaries',existing);
 }
 
 function attMins(r){
