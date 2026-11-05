@@ -62,4 +62,15 @@ Po deployi zkopíruj URL (např. `https://primetime-backend-xyz.vercel.app`) a:
 token:{memberId}         → AES-256-GCM zašifrovaný OAuth token (TTL 1 rok)
 scheduled:{jobId}        → JSON metadata jobu (TTL sendAt + 48h)
 member:{memberId}:jobs   → SET jobIds čekajících jobů člena
+log:{logId}              → JSON záznamu času (TTL 2 roky)
+board-logs:{boardId}     → ZSET logId
+card-logs:{cardId}       → ZSET logId (popup karty nečte celou nástěnku)
+member-logs:{memberId}   → SET logId
+card-total:{cardId}      → součet minut, udržovaný přes INCRBY
+boards                   → SET boardId (admin report bez KEYS)
+```
+
+Po nasazení verze s `card-logs`/`boards` jednou spusť migraci:
+```bash
+node --env-file=.env scripts/migrate-indexes.js
 ```
