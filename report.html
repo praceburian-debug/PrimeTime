@@ -696,11 +696,13 @@ async function loadAdminAtt(){
       'm3':{memberName:'Marek Svoboda',summary:{[ym]:7200,[prev]:8100},updatedAt:new Date().toISOString()},
     };
   }else{
-    let data=await _t.get('board','shared','pt-att-summaries');
+    // Backend má přednost; pt-att-summaries z Trella jen pro členy, kteří ještě neotevřeli Můj report
+    const res=await fetch(`${BACKEND}/api/attendance?boardId=${currentBoardId}`);
+    const{summaries={}}=await res.json();
+    let legacy=await _t.get('board','shared','pt-att-summaries');
     // Trello někdy vrátí stringified JSON
-    if(typeof data==='string'){try{data=JSON.parse(data);}catch{data={};}}
-    attSummaries=data||{};
-    console.log('pt-att-summaries loaded:', JSON.stringify(attSummaries).slice(0,200));
+    if(typeof legacy==='string'){try{legacy=JSON.parse(legacy);}catch{legacy={};}}
+    attSummaries={...(legacy||{}),...summaries};
   }
   renderAdminAtt();
 }
