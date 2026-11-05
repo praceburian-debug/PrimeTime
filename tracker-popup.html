@@ -260,12 +260,18 @@ async function startTimer(){
   }
   // ── Spusť nový časovač ────────────────────────────────────
   await api.set('member','private','tt-running-'+cardId,{startedAt:Date.now()-tsecs*1000});
-  const sl=IN_TRELLO?(await _t.card('shortLink')).shortLink:'';
-  await api.set('member','private','pt-active-card',{cardId,shortLink:sl,cardName});
   tint=setInterval(()=>{tsecs++;document.getElementById('clock').textContent=fmtS(tsecs);},1000);
   document.getElementById('clock').classList.add('r');
   document.getElementById('csub').innerHTML='<span class="rdot"></span>Časovač běží…';
   document.getElementById('btn-s').classList.add('h');document.getElementById('btn-stop').classList.remove('h');document.getElementById('btn-r').disabled=true;
+  // Časovač už běží — chyba při ukládání aktivní karty nesmí nechat popup ve stavu "Připraven"
+  try{
+    const sl=IN_TRELLO?(await _t.card('shortLink')).shortLink:'';
+    await api.set('member','private','pt-active-card',{cardId,shortLink:sl,cardName});
+  }catch(e){
+    console.error('pt-active-card:',e);
+    document.getElementById('csub').innerHTML='<span class="rdot"></span>Časovač běží… (chyba aktivní karty: '+(e&&e.message||e)+')';
+  }
 }
 function resumeTimer(){
   // Obnov pt-active-card se shortLink pokud chybí
